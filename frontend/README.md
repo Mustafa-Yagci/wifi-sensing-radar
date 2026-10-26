@@ -1,16 +1,51 @@
-# React + Vite
+# WiFi Sensing Radar — Frontend Interface
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Modern, real-time web dashboard for environmental Wi-Fi sensing and RF perturbation monitoring. Built with React 19 and Vite.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🎯 Architecture & Design
 
-## React Compiler
+The frontend provides real-time telemetry visualization driven by high-frequency Wi-Fi signal measurements:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Live Signal Monitor (`monitor.html` / `index.html`):**
+  - **Dynamic Radar Field:** High-performance HTML5 Canvas renderer showing real-time environmental perturbations, baseline variance, and receiver status.
+  - **Spectral & Fresnel Panels:** Real-time metrics for TX-RX distance estimation (Log-Distance Path Loss), Fresnel zone perturbation percentage, and spectral frequency analysis (dominant Hz, entropy).
+  - **Audio Alerts & Controls:** Synthesized Web Audio API alarms on threshold-exceeding environmental motion, with baseline re-calibration controls.
+- **WebSocket Streaming (`useRadarWebSocket.js`):**
+  - Auto-reconnecting binary/JSON WebSocket stream (`/ws`).
+  - Graceful polling fallback (`/api/poll`) with exponential backoff on disconnects.
+  - Sub-150ms latency between driver reads and canvas redraws.
+- **Components:**
+  - `App.jsx`: Main telemetry orchestration, audio synthesis, and status cards.
+  - `components/CsiWaterfall.jsx`: Subcarrier amplitude matrix visualizer for CSI hardware.
+  - `components/EnvironmentPanels.jsx`: Spectral statistics, multi-link metrics, and event log journal.
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🚀 Development & Build
+
+### Prerequisites
+- Node.js 18+ (tested with Node 20 / 22)
+- npm 9+
+
+### Scripts
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server (with HMR)
+npm run dev
+
+# Run test suite
+npm test
+
+# Run ESLint validation
+npm run lint
+
+# Build production bundle (outputs to dist/)
+npm run build
+```
+
+Production builds are output directly to `dist/` and served statically by the FastAPI/Starlette backend (`server.py`).
