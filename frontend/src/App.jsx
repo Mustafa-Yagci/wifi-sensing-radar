@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Activity, ArrowDownToLine, Circle, Cpu, Radio, RotateCcw, Wifi, Waves, Volume2, VolumeX } from 'lucide-react';
 import { useRadarWebSocket } from './hooks/useRadarWebSocket';
 import { LinksPanel, SpectralPanel, EventsJournal, AlertsToggle, WaterfallPanel } from './components/EnvironmentPanels';
@@ -55,7 +55,7 @@ export default function App() {
   const [notice, setNotice] = useState('');
   const [sessions, setSessions] = useState([]);
   const [audioMuted, setAudioMuted] = useState(false);
-  const [lastBeepAt, setLastBeepAt] = useState(0);
+  const lastBeepRef = useRef(0);
 
   const available = data.system_status === 'ok';
   const isCsi = data.source === 'esp32_csi' || data.source === 'csi_simulation';
@@ -66,12 +66,12 @@ export default function App() {
   useEffect(() => {
     if (data.motion_detected && !audioMuted) {
       const now = Date.now();
-      if (now - lastBeepAt > 1400) {
+      if (now - lastBeepRef.current > 1400) {
         playBeep();
-        setLastBeepAt(now);
+        lastBeepRef.current = now;
       }
     }
-  }, [data.motion_detected, audioMuted, lastBeepAt]);
+  }, [data.motion_detected, audioMuted]);
 
   const loadSessions = async () => {
     try {
