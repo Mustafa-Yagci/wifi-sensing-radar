@@ -8,7 +8,7 @@
 
 ## 1. Yönetici Özeti (Executive Summary)
 
-Bu rapor; orijinal açık kaynaklı Wi-Fi hareket algılama projesinin (**WIWAVE-MOTION**) devralınmasından itibaren, donanımsal ve algoritmik kısıtların giderilmesi, sinyal kararlılığının endüstriyel ve akademik standartlara yükseltilmesi, yanlış pozitiflerin elenmesi ve kullanıcı arayüzünün modernleştirilmesi amacıyla gerçekleştirilen tüm mühendislik geliştirmelerini ve bunların dayandığı bilimsel literatür kaynakçasını belgelemektedir.
+Bu rapor; orijinal açık kaynaklı Wi-Fi hareket algılama projesinin (**WIFI_SENSING-MOTION**) devralınmasından itibaren, donanımsal ve algoritmik kısıtların giderilmesi, sinyal kararlılığının endüstriyel ve akademik standartlara yükseltilmesi, yanlış pozitiflerin elenmesi ve kullanıcı arayüzünün modernleştirilmesi amacıyla gerçekleştirilen tüm mühendislik geliştirmelerini ve bunların dayandığı bilimsel literatür kaynakçasını belgelemektedir.
 
 İlk sürümde karşılaşılan temel problemler:
 1. **Termal Taban Sapması (Thermal Drift):** Ortamda hiçbir hareket olmamasına rağmen, Wi-Fi ağ kartının (NIC) güç amplifikatörünün (PA) ısınması sonucu RSSI sinyalinde meydana gelen 3–4 dB'lik yavaş sapmaların yanlış hareket alarmı (false positive) üretmesi.
@@ -115,6 +115,31 @@ Bu proje aşağıdaki açık kaynak kod depoları temel alınarak inşa edilmiş
   2. Projenin doğrudan ana sayfası (`/`), modern React 19 tabanlı **Live Monitor** olarak ayarlandı.
   3. Sol üstteki gereksiz logolar ve eski marka etiketleri temizlenerek minimalist `SENSING WORKSPACE 06` mühendislik başlığı konumlandırıldı.
   4. Canlı SVG dalga grafiği (sparkline), RF yol kaybı mesafesi ($d = 10^{\frac{|P_{\text{tx}} - \text{RSSI}|}{10 \cdot n}}$), Fresnel pertürbasyonu ve spektral entropi dağılımı görselleştirildi.
+
+---
+
+### G. 3D Wi-Fi Algılama Fiziği: Tek Bir Cihazla Gerçek 3D Neden Yapılamaz?
+
+Mühendislik dürüstlüğü ve dalga fiziği prensipleri gereğince, **tek bir Wi-Fi alıcısı (örneğin yalnızca bir laptop veya tek bir ESP32) ile 3D oda koordinatları ($x, y, z$), insan iskeleti veya uzaysal konumlandırma yapılması fiziksel olarak imkansızdır.** İnternette tek antenli Wi-Fi cihazıyla tam 3D insan gövdesi çıkardığını iddia eden projeler gerçeği yansıtmayan sentetik simülasyonlardır.
+
+#### 1. Fresnel Elipsoidi Belirsizliği (Fresnel Ambiguity)
+Verici ($\text{Tx}$) ile Alıcı ($\text{Rx}$) arasındaki kablosuz dalga, eş-odaklı 3 boyutlu **Fresnel elipsoitleri** boyunca yayılır:
+$$|d(\text{Tx}, P) + d(P, \text{Rx}) - d(\text{Tx}, \text{Rx})| = n \frac{\lambda}{2}$$
+- **1-Serbestlik Derecesi (1 DoF):** Bu 3 boyutlu elipsoit yüzeyinin herhangi bir noktasında (1 metre yukarıda, 1 metre aşağıda, sağda veya solda) meydana gelen bir hareket, alıcıda **birebir aynı faz iptaline ve genlik düşüşüne** yol açar.
+- Tek bir alıcı, hareketin 3D uzaydaki $(x, y, z)$ koordinatını veya geliş açısını ayırt edemez; yalnızca **Fresnel hattındaki toplam pertürbasyon şiddetini** ölçebilir.
+
+#### 2. Gerçek 3D Konumlandırma ve İskelet Algılama İçin Zorunlu Donanım Mimarisi
+Wi-Fi sinyalleriyle gerçek 3D uzaysal haritalama yapılabilmesi için aşağıdaki altyapı şarttır:
+1. **Dağıtık Çok Düğümlü Mesh Ağı (Multilaterasyon):**
+   - Odayı çevreleyen en az **3 ila 4 bağımsız ve senkronize Tx-Rx çifti**.
+   - Birden fazla elipsoidin uzaysal kesişimi alınarak $(x, y, z)$ tekil noktası çözümlenir (trilateration).
+2. **Faz Senkronlu MIMO Anten Dizileri (AoA ve ToF):**
+   - En az $3 \times 3$ veya $4 \times 4$ boyutlarında, faz kalibrasyonu yapılmış düzlemsel anten dizileri.
+   - Sinyalin Geliş Açısını (Azimuth $\theta$ ve Elevation $\phi$) hesaplayan 2D-MUSIC veya SpotFi algoritmaları ve Uçuş Süresi (Time-of-Flight).
+3. **Optik MoCap ile Eğitilmiş Derin Öğrenme Modelleri:**
+   - CMU DensePose veya MIT RF-Pose gibi sistemler, milimetrik hassasiyetteki OptiTrack kızılötesi hareket yakalama sistemleriyle eşzamanlı kaydedilmiş binlerce saatlik veri setiyle eğitilmiş sinir ağları gerektirir.
+
+Bu fiziksel gerçeklik nedeniyle, projemizdeki sahte 3D illüstrasyon devre dışı bırakılmış; donanımın dürüst ve gerçek fiziksel yeteneğini gösteren modern **Live Radar Monitor** ana arayüz yapılmıştır.
 
 ---
 

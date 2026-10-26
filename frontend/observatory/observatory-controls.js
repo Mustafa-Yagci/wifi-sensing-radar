@@ -1,4 +1,4 @@
-import { emptyFrame, normalizeFrame } from './wiwave-data.js';
+import { emptyFrame, normalizeFrame } from './observatory-data.js';
 
 const el = id => document.getElementById(id);
 const show = (id, value) => { const node = el(id); if (node) node.textContent = value ?? '—'; };
@@ -77,7 +77,7 @@ export class WorkspaceControls {
       this.loadSessions();
     } else if (this.page === 'dataset') {
       content.innerHTML = `<p class="workspace-intro">Collect short, manually labelled CSI amplitude trials</p><p id="trial-live-device"></p>
-        <p>First flash Espressif's <a href="https://github.com/espressif/esp-csi/tree/master/examples/get-started/csi_recv_router" target="_blank" rel="noreferrer">csi_recv_router</a>, install the optional serial requirements, set WIWAVE_SOURCE=esp32_csi and WIWAVE_CSI_PORT, then restart the sensing server.</p>
+        <p>First flash Espressif's <a href="https://github.com/espressif/esp-csi/tree/master/examples/get-started/csi_recv_router" target="_blank" rel="noreferrer">csi_recv_router</a>, install the optional serial requirements, set WIFI_SENSING_SOURCE=esp32_csi and WIFI_SENSING_CSI_PORT, then restart the sensing server.</p>
         <label class="trial-input">Trial name <input id="trial-name" maxlength="80" value="Room trial"></label>
         <label class="trial-input">Current room label <select id="trial-label"><option value="empty_room">Empty room</option><option value="person_still">Person present, still</option><option value="person_moving">Person moving</option><option value="fan_interference">Fan / airflow interference</option><option value="door_change">Door / furniture change</option><option value="pet_or_other_motion">Pet / other motion</option></select></label>
         <label class="trial-input">Maximum time <select id="trial-seconds"><option value="30">30 seconds</option><option value="60">1 minute</option><option value="120" selected>2 minutes</option><option value="180">3 minutes</option></select></label>

@@ -156,7 +156,7 @@ class UnavailableSource:
 
 
 def create_source():
-    mode = os.getenv('WIWAVE_SOURCE', 'native_rssi')
+    mode = os.getenv('WIFI_SENSING_SOURCE', 'native_rssi')
     if os.getenv('SIMULATION_MODE', '').lower() in {'true', '1', 'yes'}:
         mode = 'simulation'
     if mode == 'simulation':
@@ -164,12 +164,12 @@ def create_source():
     if mode == 'csi_simulation':
         return CsiDemoSource()
     if mode == 'esp32_csi':
-        port = os.getenv('WIWAVE_CSI_PORT')
+        port = os.getenv('WIFI_SENSING_CSI_PORT')
         if not port:
-            raise ValueError('WIWAVE_CSI_PORT is required for esp32_csi')
-        return SerialCsiSource(port, int(os.getenv('WIWAVE_CSI_BAUD', '115200')))
+            raise ValueError('WIFI_SENSING_CSI_PORT is required for esp32_csi')
+        return SerialCsiSource(port, int(os.getenv('WIFI_SENSING_CSI_BAUD', '115200')))
     if mode != 'native_rssi':
-        raise ValueError('WIWAVE_SOURCE must be native_rssi, csi_simulation, esp32_csi, or simulation')
+        raise ValueError('WIFI_SENSING_SOURCE must be native_rssi, csi_simulation, esp32_csi, or simulation')
     if platform.system() != 'Windows':
         return UnavailableSource()
     from sensing.windows import NativeWifiSource

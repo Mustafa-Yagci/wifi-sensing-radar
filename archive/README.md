@@ -1,6 +1,6 @@
-# Archive: WiWave v3/v4 research prototypes
+# Archive: WiFi Sensing v3/v4 research prototypes
 
-This directory preserves the early WiWave engines exactly as they were, for
+This directory preserves the early WiFi Sensing engines exactly as they were, for
 reference and because their 294 unit tests still pass. **None of it runs in the
 live v6 system** — the live pipeline lives in `sensing/`, `server.py`, and
 `frontend/src`.

@@ -4,7 +4,7 @@
 WiFi Motion Sensing v4 is an experimental, privacy-first motion detection system. Unlike traditional security systems that rely on cameras or PIR sensors, this system utilizes **Dual-Sensor Fusion** of standard Wi-Fi signal metadata (RSSI and RTT) to detect human activity.
 
 ## How It Works: The Dual-Sensor Fusion
-WiWave treats the Wi-Fi environment as a high-resolution sensing fabric. We analyze two primary metrics:
+WiFi Sensing treats the Wi-Fi environment as a high-resolution sensing fabric. We analyze two primary metrics:
 
 1.  **Macro-Sensing (RSSI - Signal Strength):**
     -   Used for **Long-term Environment Baselining** and **Distance Estimation**.
@@ -14,10 +14,10 @@ WiWave treats the Wi-Fi environment as a high-resolution sensing fabric. We anal
     -   Round-Trip Time (RTT) jitter is highly sensitive to the multi-path interference caused by human movement. Even subtle movements like breathing cause detectable phase shifts in the signal timing.
 
 ## Intelligence Engine v4: The Brain
-The core of WiWave is the `MotionDetector` class, which uses advanced signal processing techniques:
+The core of WiFi Sensing is the `MotionDetector` class, which uses advanced signal processing techniques:
 
 ### 1. Adaptive Baselining (EMA)
-Instead of a static threshold, WiWave uses **Exponential Moving Averages (EMA)** to "learn" the environment. This allows the system to automatically adjust to:
+Instead of a static threshold, WiFi Sensing uses **Exponential Moving Averages (EMA)** to "learn" the environment. This allows the system to automatically adjust to:
 -   Furniture being moved.
 -   Doors being opened/closed.
 -   Slow changes in the background RF noise from neighbors.
@@ -46,4 +46,4 @@ The system combines Jitter Variance and Band Energy to classify the environment 
 -   **Interference:** High network traffic on the host machine can introduce "artificial" jitter.
 
 ---
-*WiWave is an experimental project exploring the boundaries of device-free sensing.*
+*WiFi Sensing is an experimental project exploring the boundaries of device-free sensing.*

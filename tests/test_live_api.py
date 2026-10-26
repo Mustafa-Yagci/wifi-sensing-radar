@@ -19,9 +19,9 @@ def live_server(tmp_path_factory):
     with socket.socket() as sock:
         sock.bind(('127.0.0.1', 0))
         port = sock.getsockname()[1]
-    env = {**os.environ, 'WIWAVE_SOURCE': 'simulation', 'SIMULATION_MODE': 'true',
-           'WIWAVE_DB_PATH': str(tmp_path_factory.mktemp('live-api') / 'sessions.db'),
-           'WIWAVE_CALIBRATION_SECONDS': '5', 'PYTHONDONTWRITEBYTECODE': '1'}
+    env = {**os.environ, 'WIFI_SENSING_SOURCE': 'simulation', 'SIMULATION_MODE': 'true',
+           'WIFI_SENSING_DB_PATH': str(tmp_path_factory.mktemp('live-api') / 'sessions.db'),
+           'WIFI_SENSING_CALIBRATION_SECONDS': '5', 'PYTHONDONTWRITEBYTECODE': '1'}
     process = subprocess.Popen([sys.executable, '-B', '-m', 'uvicorn', 'server:app', '--host', '127.0.0.1', '--port', str(port)],
                                cwd=root, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     base = f'http://127.0.0.1:{port}'

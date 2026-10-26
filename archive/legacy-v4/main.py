@@ -1,5 +1,5 @@
 """
-WiWave Motion - Main Entry Point (v3 Dual-Sensor)
+WiFi Motion Sensing - Main Entry Point (v3 Dual-Sensor)
 ================================================
 How to run:
 1. Ensure you are on a Windows laptop with Wi-Fi connected.
@@ -22,12 +22,12 @@ from visualizer import WifiVisualizer
 
 # --- CONFIGURATION ---
 UPDATE_INTERVAL = 0.1  # Fast updates for micro-sensing (RTT)
-LOG_FILE = "logs/wiwave_main_log.csv"
+LOG_FILE = "logs/wifi_sensing_main_log.csv"
 # ---------------------
 
 def main():
     print("\n" + "="*40)
-    print("   WiWave Motion: Intelligence Engine v4")
+    print("   WiFi Motion Sensing: Intelligence Engine v4")
     print("="*40)
     
     # 1. Setup Logging
@@ -85,7 +85,7 @@ def main():
     except KeyboardInterrupt:
         print("\n[!] Exiting gracefully...")
     finally:
-        print("--- WiWave Motion Stopped ---")
+        print("--- WiFi Motion Sensing Stopped ---")
 
 if __name__ == "__main__":
     main()

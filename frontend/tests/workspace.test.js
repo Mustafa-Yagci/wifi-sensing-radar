@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { JSDOM } from 'jsdom';
-import { WorkspaceControls } from '../observatory/wiwave-controls.js';
+import { WorkspaceControls } from '../observatory/observatory-controls.js';
 import { HudController, DEFAULTS } from '../observatory/js/hud-controller.js';
-import { normalizeFrame } from '../observatory/wiwave-data.js';
+import { normalizeFrame } from '../observatory/observatory-data.js';
 
 test('actual Observatory markup supports source switching, settings, controls and timed replay', async t => {
   const dom = new JSDOM(fs.readFileSync(new URL('../observatory.html', import.meta.url), 'utf8'), { url: 'http://localhost:8000' });

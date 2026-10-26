@@ -1,8 +1,8 @@
-# Requirements: Multi-Person Detection for WiWave
+# Requirements: Multi-Person Detection for WiFi Sensing
 
 ## Introduction
 
-This document specifies the requirements for adding multi-person detection capabilities to the WiWave Wi-Fi motion detection system. The feature will enable simultaneous detection and tracking of 2-5 people in the same or different rooms using Wi-Fi signal analysis (RSSI and RTT).
+This document specifies the requirements for adding multi-person detection capabilities to the WiFi Sensing Wi-Fi motion detection system. The feature will enable simultaneous detection and tracking of 2-5 people in the same or different rooms using Wi-Fi signal analysis (RSSI and RTT).
 
 ## Glossary
 
@@ -254,7 +254,7 @@ This document specifies the requirements for adding multi-person detection capab
 
 ## Dependencies
 
-- Existing WiWave single-person detection system
+- Existing WiFi Sensing single-person detection system
 - NumPy and SciPy for signal processing
 - FastAPI for WebSocket communication
 - React frontend for visualization

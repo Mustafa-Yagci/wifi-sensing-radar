@@ -8,8 +8,8 @@
  * - Dot-matrix mist body mass, particle trails, WiFi waves, signal field
  * - Reflective floor, settings dialog, and practical data HUD
  */
-import { emptyFrame, LiveConnection } from '../wiwave-data.js';
-import { WorkspaceControls } from '../wiwave-controls.js';
+import { emptyFrame, LiveConnection } from '../observatory-data.js';
+import { WorkspaceControls } from '../observatory-controls.js';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
@@ -44,13 +44,13 @@ class Observatory {
 
     // Load saved settings
     try {
-      const ver = localStorage.getItem('wiwave-observatory-version');
+      const ver = localStorage.getItem('sensing-observatory-version');
       if (ver === SETTINGS_VERSION) {
-        const saved = localStorage.getItem('wiwave-observatory-settings');
+        const saved = localStorage.getItem('sensing-observatory-settings');
         if (saved) Object.assign(this.settings, JSON.parse(saved));
       } else {
-        localStorage.removeItem('wiwave-observatory-settings');
-        localStorage.setItem('wiwave-observatory-version', SETTINGS_VERSION);
+        localStorage.removeItem('sensing-observatory-settings');
+        localStorage.setItem('sensing-observatory-version', SETTINGS_VERSION);
       }
     } catch {}
 

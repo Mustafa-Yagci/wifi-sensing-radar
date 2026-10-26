@@ -24,16 +24,16 @@ from sensing.sources import create_source
 from sensing.spectral import SpectralAnalyzer
 from sensing.v2 import AdaptiveChangeDetector, TrafficPacer, ButterworthBandpass, CsiNormalizer, HampelFilter
 
-ENGINE_VERSION = os.getenv('WIWAVE_ENGINE_VERSION', 'v2').lower()
+ENGINE_VERSION = os.getenv('WIFI_SENSING_ENGINE_VERSION', 'v2').lower()
 
 ROOT = Path(__file__).resolve().parent
-DB_PATH = os.getenv('WIWAVE_DB_PATH', str(ROOT / 'wiwave_sessions.db'))
+DB_PATH = os.getenv('WIFI_SENSING_DB_PATH', str(ROOT / 'sensing_sessions.db'))
 READ_RATE = float(os.getenv('SAMPLE_RATE_HZ', '10'))
-CALIBRATION_SECONDS = float(os.getenv('WIWAVE_CALIBRATION_SECONDS', '20'))
+CALIBRATION_SECONDS = float(os.getenv('WIFI_SENSING_CALIBRATION_SECONDS', '20'))
 if not 1 <= READ_RATE <= 100 or not 5 <= CALIBRATION_SECONDS <= 120:
-    raise ValueError('SAMPLE_RATE_HZ must be 1-100; WIWAVE_CALIBRATION_SECONDS must be 5-120')
+    raise ValueError('SAMPLE_RATE_HZ must be 1-100; WIFI_SENSING_CALIBRATION_SECONDS must be 5-120')
 ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000', 'http://localhost:5173', 'http://127.0.0.1:5173']
-ORIGINS += [x.strip() for x in os.getenv('WIWAVE_ALLOWED_ORIGINS', '').split(',') if x.strip()]
+ORIGINS += [x.strip() for x in os.getenv('WIFI_SENSING_ALLOWED_ORIGINS', '').split(',') if x.strip()]
 
 
 def utc_now():
@@ -46,8 +46,8 @@ def estimate_rf_distance_and_proximity(rssi_dbm, baseline_dbm, change_score, mot
     if rssi_dbm is None:
         return None, 0.0, 'Bilinmiyor'
     try:
-        a_1m = float(os.getenv('WIWAVE_REF_RSSI_1M', '-40.0'))
-        n_exp = float(os.getenv('WIWAVE_PATH_LOSS_EXP', '2.2'))
+        a_1m = float(os.getenv('WIFI_SENSING_REF_RSSI_1M', '-40.0'))
+        n_exp = float(os.getenv('WIFI_SENSING_PATH_LOSS_EXP', '2.2'))
         ratio = (a_1m - float(rssi_dbm)) / (10.0 * n_exp)
         est_d = round(float(np.clip(10.0 ** ratio, 0.5, 30.0)), 1)
     except Exception:
@@ -72,11 +72,11 @@ class Runtime:
         if ENGINE_VERSION == 'v2':
             self.detector = AdaptiveChangeDetector(
                 CALIBRATION_SECONDS,
-                lock_calibration=os.getenv('WIWAVE_LOCK_CALIBRATION', '1').lower() in {'1', 'true', 'yes'},
-                drift_alpha=float(os.getenv('WIWAVE_DRIFT_ALPHA', '0.005')),
-                enable_hampel=os.getenv('WIWAVE_HAMPEL', '1').lower() in {'1', 'true', 'yes'}
+                lock_calibration=os.getenv('WIFI_SENSING_LOCK_CALIBRATION', '1').lower() in {'1', 'true', 'yes'},
+                drift_alpha=float(os.getenv('WIFI_SENSING_DRIFT_ALPHA', '0.005')),
+                enable_hampel=os.getenv('WIFI_SENSING_HAMPEL', '1').lower() in {'1', 'true', 'yes'}
             )
-            if self.source.source == 'native_rssi' and os.getenv('WIWAVE_TRAFFIC_PACER', '1').lower() in {'1', 'true', 'yes'}:
+            if self.source.source == 'native_rssi' and os.getenv('WIFI_SENSING_TRAFFIC_PACER', '1').lower() in {'1', 'true', 'yes'}:
                 self.pacer = TrafficPacer(rate_hz=20.0)
                 self.pacer.start()
             else:
@@ -84,7 +84,7 @@ class Runtime:
         else:
             self.detector = ChangeDetector(
                 CALIBRATION_SECONDS,
-                lock_calibration=os.getenv('WIWAVE_LOCK_CALIBRATION', '1').lower() in {'1', 'true', 'yes'}
+                lock_calibration=os.getenv('WIFI_SENSING_LOCK_CALIBRATION', '1').lower() in {'1', 'true', 'yes'}
             )
             self.pacer = None
         self.spectral = SpectralAnalyzer(rate_hz=READ_RATE)
@@ -107,7 +107,7 @@ class Runtime:
         self.event_started_mono = None
         self.prev_motion = False
         self.event_queue = asyncio.Queue(maxsize=20)
-        self.alerts_enabled = os.getenv('WIWAVE_ALERTS', '0').lower() in {'1', 'true', 'yes'}
+        self.alerts_enabled = os.getenv('WIFI_SENSING_ALERTS', '0').lower() in {'1', 'true', 'yes'}
 
     def snapshot(self):
         age = time.monotonic() - self.last_received if self.last_received is not None else None
@@ -532,7 +532,7 @@ async def start_csi_trial(request: CsiTrialStart):
                              'dropped': 0, 'stop_reason': 'stopped'}
     return {'message': 'CSI amplitude trial started. Samples are stored only in the local database.',
             'trial_id': trial_id, 'seconds': request.seconds, 'sample_rate_limit_hz': 10,
-            'amplitude_bins_limit': 512, 'sample_limit': limit, 'schema': 'wiwave-csi-amplitude-v1'}
+            'amplitude_bins_limit': 512, 'sample_limit': limit, 'schema': 'wifi-sensing-csi-v1'}
 
 
 @app.post('/api/csi/trials/label')
@@ -572,7 +572,7 @@ async def export_csi_trial(trial_id: int):
         raise HTTPException(409, 'This trial has no CSI frames to export.')
 
     async def lines():
-        yield json.dumps({'record_type': 'metadata', 'schema': 'wiwave-csi-amplitude-v1',
+        yield json.dumps({'record_type': 'metadata', 'schema': 'wifi-sensing-csi-v1',
                           **dict(trial), 'source': 'esp32_csi', 'amplitude_units': 'hypot(I,Q), device-dependent',
                           'note': 'CSI magnitude vectors only; phase and raw signed I/Q were not captured.'}, allow_nan=False) + '\n'
         async with aiosqlite.connect(DB_PATH) as db:
@@ -583,7 +583,7 @@ async def export_csi_trial(trial_id: int):
                                       'subcarrier_count': row[5], 'amplitudes': json.loads(row[6]),
                                       'truncated': bool(row[7])}, allow_nan=False) + '\n'
     return StreamingResponse(lines(), media_type='application/x-ndjson',
-                             headers={'Content-Disposition': f'attachment; filename=wiwave_csi_trial_{trial_id}.jsonl'})
+                             headers={'Content-Disposition': f'attachment; filename=csi_trial_{trial_id}.jsonl'})
 
 
 @app.get('/api/csi/trials/{trial_id}/analysis')
@@ -789,7 +789,7 @@ async def export_session(session_id: int):
                     writer.writerow([column[0] for column in cursor.description])
                     writer.writerows(legacy_rows)
                     return StreamingResponse(iter([output.getvalue()]), media_type='text/csv',
-                                             headers={'Content-Disposition': f'attachment; filename=wiwave_session_{session_id}.csv'})
+                                             headers={'Content-Disposition': f'attachment; filename=sensing_session_{session_id}.csv'})
     async def rows():
         async with aiosqlite.connect(DB_PATH) as db:
             async with db.execute('SELECT timestamp,payload FROM sensing_telemetry WHERE session_id=? ORDER BY id', (session_id,)) as cursor:
@@ -803,7 +803,7 @@ async def export_session(session_id: int):
                     buffer.truncate(0)
                     writer.writerow([ts] + [payload.get(key) for key in ['source', 'rssi_dbm', 'state', 'change_score', 'read_rate_hz', 'is_simulation']])
                     yield buffer.getvalue()
-    return StreamingResponse(rows(), media_type='text/csv', headers={'Content-Disposition': f'attachment; filename=wiwave_session_{session_id}.csv'})
+    return StreamingResponse(rows(), media_type='text/csv', headers={'Content-Disposition': f'attachment; filename=sensing_session_{session_id}.csv'})
 
 
 @app.get('/session/{session_id}/frames')
@@ -871,4 +871,4 @@ async def frontend_page(path: str):
 
 
 if __name__ == '__main__':
-    uvicorn.run('server:app', host=os.getenv('WIWAVE_HOST', '127.0.0.1'), port=int(os.getenv('PORT', '8000')), reload=False)
+    uvicorn.run('server:app', host=os.getenv('WIFI_SENSING_HOST', '127.0.0.1'), port=int(os.getenv('PORT', '8000')), reload=False)

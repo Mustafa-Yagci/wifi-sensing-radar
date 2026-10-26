@@ -1,11 +1,11 @@
 # v5 deployment update
 
 Use [LIVE_SENSING_GUIDE.md](LIVE_SENSING_GUIDE.md) for current configuration.
-v5 binds to `127.0.0.1` by default; the cloud demo sets `WIWAVE_HOST=0.0.0.0`.
+v5 binds to `127.0.0.1` by default; the cloud demo sets `WIFI_SENSING_HOST=0.0.0.0`.
 `AUTO_SIM_FALLBACK` no longer enables synthetic data. Set `SIMULATION_MODE=true`
 explicitly for a demo. The material below is retained as historical v4 guidance.
 
-# Historical WiWave Deployment Guide
+# Historical WiFi Sensing Deployment Guide
 
 ## Architecture overview
 
@@ -52,7 +52,7 @@ explicitly for a demo. The material below is retained as historical v4 guidance.
 
 ```bash
 git clone <repo-url>
-cd "WiWave 2"
+cd "WiFi Sensing 2"
 
 # Python dependencies
 python -m venv .venv
@@ -131,7 +131,7 @@ Use a process manager to keep it running:
 ```bash
 # Using PM2 (Node.js process manager, works for Python too)
 npm install -g pm2
-pm2 start "python server.py" --name wiwave
+pm2 start "python server.py" --name wifi_sensing
 pm2 save
 pm2 startup
 ```
@@ -139,17 +139,17 @@ pm2 startup
 Or systemd on Linux:
 
 ```ini
-# /etc/systemd/system/wiwave.service
+# /etc/systemd/system/wifi_sensing.service
 [Unit]
-Description=WiWave Motion Detection Server
+Description=WiFi Motion Sensing Detection Server
 After=network.target
 
 [Service]
 User=pi
-WorkingDirectory=/home/pi/wiwave
+WorkingDirectory=/home/pi/wifi_sensing
 Environment=ENVIRONMENT=prod
 Environment=PORT=8000
-ExecStart=/home/pi/wiwave/.venv/bin/python server.py
+ExecStart=/home/pi/wifi_sensing/.venv/bin/python server.py
 Restart=always
 RestartSec=5
 
@@ -158,8 +158,8 @@ WantedBy=multi-user.target
 ```
 
 ```bash
-sudo systemctl enable wiwave
-sudo systemctl start wiwave
+sudo systemctl enable wifi_sensing
+sudo systemctl start wifi_sensing
 ```
 
 ### Option B — Render.com (cloud)
@@ -170,7 +170,7 @@ A `render.yaml` is included in the repository:
 # render.yaml (already in repo)
 services:
   - type: web
-    name: wiwave
+    name: wifi_sensing
     env: python
     buildCommand: "pip install -r requirements.txt && cd frontend && npm install && npm run build"
     startCommand: "python server.py"
@@ -216,8 +216,8 @@ CMD ["python", "server.py"]
 ```
 
 ```bash
-docker build -t wiwave .
-docker run -p 8000:8000 -e SIMULATION_MODE=true wiwave
+docker build -t wifi_sensing .
+docker run -p 8000:8000 -e SIMULATION_MODE=true wifi_sensing
 ```
 
 ---
@@ -234,7 +234,7 @@ docker run -p 8000:8000 -e SIMULATION_MODE=true wiwave
 
 ## Database
 
-WiWave uses SQLite (`wiwave_sessions.db`) for session telemetry.
+WiFi Sensing uses SQLite (`sensing_sessions.db`) for session telemetry.
 
 - Created automatically on first run
 - Located in the project root
@@ -243,8 +243,8 @@ WiWave uses SQLite (`wiwave_sessions.db`) for session telemetry.
 To reset the database:
 
 ```bash
-del wiwave_sessions.db    # Windows
-# rm wiwave_sessions.db   # Linux / macOS
+del sensing_sessions.db    # Windows
+# rm sensing_sessions.db   # Linux / macOS
 ```
 
 ---
@@ -258,7 +258,7 @@ To enable debug logs for the multi-person pipeline:
 
 ```python
 import logging
-logging.getLogger("WiWave.MultiPerson.Orchestrator").setLevel(logging.DEBUG)
+logging.getLogger("WiFi Sensing.MultiPerson.Orchestrator").setLevel(logging.DEBUG)
 ```
 
 Log format:
@@ -314,4 +314,4 @@ cd frontend && npm install && npm run build && cd ..
 
 ---
 
-*WiWave v4 · Deployment Guide v1.0*
+*WiFi Sensing v4 · Deployment Guide v1.0*

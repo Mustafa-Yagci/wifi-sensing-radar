@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeFrame, emptyFrame, poseKeypoints, COCO_JOINTS, LiveConnection } from '../observatory/wiwave-data.js';
+import { normalizeFrame, emptyFrame, poseKeypoints, COCO_JOINTS, LiveConnection } from '../observatory/observatory-data.js';
 import { DemoDataGenerator } from '../observatory/js/demo-data.js';
 import { FigurePool } from '../observatory/js/figure-pool.js';
 import { PoseSystem } from '../observatory/js/pose-system.js';

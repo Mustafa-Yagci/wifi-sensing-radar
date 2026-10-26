@@ -59,6 +59,30 @@ It was engineered as a truthful, scientific alternative to fake "WiFi radar" dem
 - 🧪 **Labelled Room-Trial Laboratory:** Collect trials tagged with room conditions (`empty_room`, `person_moving`, `fan_interference`, etc.) with built-in per-subcarrier separation analytics.
 - 🔒 **100% Local-First & Privacy-Preserving:** Local SQLite storage, zero cloud telemetry, no accounts. Raw RF evidence without recording personal identity or imagery.
 
+## 📐 The Physics of 3D Wi-Fi Sensing: Why a Single Device Cannot Do True 3D
+
+> [!IMPORTANT]
+> **Engineering Truth & Physical Constraints:**  
+> A single commodity Wi-Fi receiver (e.g., one laptop or one ESP32) **cannot** reconstruct 3D spatial $(x, y, z)$ coordinates, track 3D trajectories, or synthesize human skeletal figures. Claims of extracting full 3D skeletons from a single commodity laptop Wi-Fi antenna are physically impossible and synthetically simulated.
+
+### 1. The Fresnel Ellipsoid Ambiguity
+A single Wi-Fi link between a transmitter ($\text{Tx}$) and receiver ($\text{Rx}$) operates over concentric **Fresnel ellipsoids**:
+$$|d(\text{Tx}, P) + d(P, \text{Rx}) - d(\text{Tx}, \text{Rx})| = n \frac{\lambda}{2}$$
+- **1-Degree-of-Freedom (1 DoF):** An RF perturbation anywhere on the boundary of the 3D ellipsoid shell generates identical phase cancellation and amplitude fading at the receiver.
+- A single receiver cannot distinguish whether a disturbance is $1\text{ m}$ up, $1\text{ m}$ down, $1\text{ m}$ to the left, or $1\text{ m}$ to the right. It measures **magnitude of environmental disturbance**, not spatial coordinates.
+
+### 2. Strict Requirements for Real 3D Spatial Localization & Pose Estimation
+To genuinely reconstruct 3D spatial positions or human pose from Wi-Fi, the following hardware and algorithmic infrastructure is mandatory:
+
+1. **Distributed Multi-Node Mesh (Multilateration):**
+   - Minimum **3 to 4 non-collinear transceiver pairs** distributed around the perimeter of the room.
+   - The spatial intersection of multiple independent Fresnel ellipsoids eliminates the rotational ambiguity and solves for the unique $(x, y, z)$ intersection point.
+2. **Calibrated MIMO Multi-Antenna Arrays (AoA & ToF):**
+   - Minimum $3 \times 3$ or $4 \times 4$ uniform linear or planar antenna arrays with phase-synchronized RF chains.
+   - High-resolution array processing algorithms (e.g., 2D-MUSIC, SpotFi, Widar) to resolve Angle-of-Arrival (Azimuth $\theta$ and Elevation $\phi$) and Time-of-Flight (ToF).
+3. **Cross-Modal Deep Learning & MoCap Ground Truth:**
+   - Neural architectures (like CMU DensePose from WiFi or MIT RF-Pose) require thousands of hours of training data synchronized with millimeter-precision optical motion capture systems (e.g., OptiTrack or Vicon).
+
 ---
 
 ## 📚 Academic Foundations & Research Literature
@@ -121,8 +145,8 @@ This project builds on and acknowledges the following foundational open-source p
   Created by **@ruvnet**. The 3D Observatory user interface, post-processing shaders, wireframe skeleton rendering, and camera controls in this project are adapted from RuView's MIT-licensed `ui/observatory.html` (see [PROVENANCE.md](frontend/observatory/PROVENANCE.md)).
 * **[ESP-CSI (github.com/espressif/esp-csi)](https://github.com/espressif/esp-csi):**  
   Official repository by **Espressif Systems**. Provides the firmware examples (`csi_recv_router`) and serial packet structures used by our CSI parser.
-* **[WIWAVE-MOTION (github.com/tatheer583/WIWAVE-MOTION)](https://github.com/tatheer583/WIWAVE-MOTION):**  
-  Original Windows RSSI motion sensing project created by **@tatheer583**.
+* **[Upstream Base Repository (github.com/tatheer583/WIWAVE-MOTION)](https://github.com/tatheer583/WIWAVE-MOTION):**  
+  Original Windows RSSI motion sensing project baseline created by **@tatheer583**.
 
 ---
 

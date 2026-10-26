@@ -1,5 +1,5 @@
 """
-wifi_reader.py — Hardware Abstraction Layer for WiWave.
+wifi_reader.py — Hardware Abstraction Layer for WiFi Sensing.
 
 Supports multi-AP data collection with timing information for
 cross-viewpoint fusion used by the multi-person detection engine.

@@ -1,4 +1,4 @@
-"""Multi-person detection module for WiWave."""
+"""Multi-person detection module for WiFi Sensing."""
 
 from multi_person.modules import SignalProcessor, SignalFeatures, SignalSeparator, CalibrationModule, CalibrationParams
 from multi_person.core.models import PersonSignature, PersonState, PersonStateEvent, MultiPersonOutput

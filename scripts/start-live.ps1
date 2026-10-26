@@ -8,12 +8,12 @@ if (-not (Test-Path -LiteralPath $pythonPath)) {
 if (-not (Test-Path -LiteralPath (Join-Path $projectRoot 'frontend\dist\index.html'))) {
     throw 'Build the dashboard first: cd frontend; npm ci; npm run build'
 }
-$env:WIWAVE_SOURCE = 'native_rssi'
+$env:WIFI_SENSING_SOURCE = 'native_rssi'
 $env:SIMULATION_MODE = 'false'
-$env:WIWAVE_HOST = '127.0.0.1'
-$env:WIWAVE_ALERTS = '1'
-$env:WIWAVE_LOCK_CALIBRATION = '1'
-$env:WIWAVE_ENGINE_VERSION = 'v2'
+$env:WIFI_SENSING_HOST = '127.0.0.1'
+$env:WIFI_SENSING_ALERTS = '1'
+$env:WIFI_SENSING_LOCK_CALIBRATION = '1'
+$env:WIFI_SENSING_ENGINE_VERSION = 'v2'
 Write-Host 'WiFi Sensing live hardware: http://127.0.0.1:8000'
 Write-Host 'Keep the room quiet for the initial 20-second calibration.'
 & $pythonPath -B server.py

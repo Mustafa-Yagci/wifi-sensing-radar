@@ -1,5 +1,5 @@
 """
-Quick live smoke test against a running WiWave server.
+Quick live smoke test against a running WiFi Sensing server.
 
 Usage:
   python scripts/live_test.py

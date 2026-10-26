@@ -1,4 +1,4 @@
-// WiWave adapter for local telemetry and RuView SensingUpdate messages.
+// WiFi Sensing adapter for local telemetry and RuView SensingUpdate messages.
 // Unknown values remain unknown; generated poses are reserved for demo mode.
 const finite = value => typeof value === 'number' && Number.isFinite(value);
 const bounded = (value, min, max) => finite(value) && value >= min && value <= max ? value : null;

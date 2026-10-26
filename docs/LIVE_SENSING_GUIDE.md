@@ -43,9 +43,9 @@ older ESP32 and newer C5/C6 layouts can differ. See the
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r requirements-csi.txt
-$env:WIWAVE_SOURCE = 'esp32_csi'
-$env:WIWAVE_CSI_PORT = 'COM3' # Replace with the board's actual serial port
-$env:WIWAVE_CSI_BAUD = '115200' # Must match the flashed firmware
+$env:WIFI_SENSING_SOURCE = 'esp32_csi'
+$env:WIFI_SENSING_CSI_PORT = 'COM3' # Replace with the board's actual serial port
+$env:WIFI_SENSING_CSI_BAUD = '115200' # Must match the flashed firmware
 $env:SIMULATION_MODE = 'false'
 .\.venv\Scripts\python.exe server.py
 ```
@@ -55,7 +55,7 @@ flashing compatible firmware. The script detects COM ports, sets CSI mode explic
 and stops with a clear error if the requested port is missing.
 
 Close any other serial monitor before connecting. If the header was printed
-before WiWave opened the port, reset the board so it emits the header again.
+before WiFi Sensing opened the port, reset the board so it emits the header again.
 Both board and host must use the same baud rate. Large CSI frames at high packet
 rates require a higher firmware UART baud rate; increasing only the host rate
 does not solve that problem. Observe the reported frame rate and invalid-frame
@@ -91,7 +91,7 @@ Include empty-room baselines and repeat conditions across sessions before traini
 
 ## A useful first experiment
 
-1. Put the receiver and router in fixed positions. Let WiWave calibrate in a
+1. Put the receiver and router in fixed positions. Let WiFi Sensing calibrate in a
    quiet room; record two minutes and export the CSV as the baseline trial.
 2. Keep the layout identical, start another recording, and walk across the
    transmitter–receiver region at known times. Note those times separately.
@@ -108,16 +108,16 @@ trials and false alarms. There is no established range or accuracy yet.
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `WIWAVE_SOURCE` | `native_rssi` | `native_rssi`, `esp32_csi`, or `simulation` |
+| `WIFI_SENSING_SOURCE` | `native_rssi` | `native_rssi`, `esp32_csi`, or `simulation` |
 | `SIMULATION_MODE` | false | Explicit true overrides the source with a demo |
 | `SAMPLE_RATE_HZ` | 10 | Native driver read ceiling, 1–100 Hz |
-| `WIWAVE_CALIBRATION_SECONDS` | 20 | Quiet baseline duration, 5–120 seconds |
-| `WIWAVE_CSI_PORT` | unset | Required serial port for CSI |
-| `WIWAVE_CSI_BAUD` | 115200 | Serial baud matching the firmware |
-| `WIWAVE_HOST` | 127.0.0.1 | Local bind address |
+| `WIFI_SENSING_CALIBRATION_SECONDS` | 20 | Quiet baseline duration, 5–120 seconds |
+| `WIFI_SENSING_CSI_PORT` | unset | Required serial port for CSI |
+| `WIFI_SENSING_CSI_BAUD` | 115200 | Serial baud matching the firmware |
+| `WIFI_SENSING_HOST` | 127.0.0.1 | Local bind address |
 | `PORT` | 8000 | Server port |
-| `WIWAVE_DB_PATH` | project/wiwave_sessions.db | SQLite session database |
-| `WIWAVE_ALLOWED_ORIGINS` | unset | Additional comma-separated frontend origins |
+| `WIFI_SENSING_DB_PATH` | project/sensing_sessions.db | SQLite session database |
+| `WIFI_SENSING_ALLOWED_ORIGINS` | unset | Additional comma-separated frontend origins |
 
 `AUTO_SIM_FALLBACK` and `MULTI_PERSON_EVERY_N` no longer control the v5 pipeline.
 The historical Python DSP modules are not invoked by the live server.
@@ -125,7 +125,7 @@ The historical Python DSP modules are not invoked by the live server.
 Demo-only mode is explicit:
 
 ```powershell
-$env:WIWAVE_SOURCE = 'simulation'
+$env:WIFI_SENSING_SOURCE = 'simulation'
 .\.venv\Scripts\python.exe server.py
 ```
 

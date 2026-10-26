@@ -37,11 +37,11 @@ if ($Baud -lt 9600 -or $Baud -gt 2000000) {
     throw 'Baud must be between 9600 and 2000000 and match the firmware.'
 }
 
-$env:WIWAVE_SOURCE = 'esp32_csi'
+$env:WIFI_SENSING_SOURCE = 'esp32_csi'
 $env:SIMULATION_MODE = 'false'
-$env:WIWAVE_CSI_PORT = $Port
-$env:WIWAVE_CSI_BAUD = [string]$Baud
-$env:WIWAVE_HOST = '127.0.0.1'
+$env:WIFI_SENSING_CSI_PORT = $Port
+$env:WIFI_SENSING_CSI_BAUD = [string]$Baud
+$env:WIFI_SENSING_HOST = '127.0.0.1'
 Write-Host "WiFi Sensing CSI receiver: $Port at $Baud baud. Open http://127.0.0.1:8000 and choose Workspace > CSI data."
 Write-Host 'CSI collection remains off until you explicitly start a labelled trial.'
 & $pythonPath -B (Join-Path $projectRoot 'server.py')

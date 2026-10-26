@@ -1,14 +1,14 @@
-# WiWave hardware guide: adding an ESP32 CSI receiver
+# WiFi Sensing hardware guide: adding an ESP32 CSI receiver
 
-WiWave's laptop mode reads RSSI, which is one number per link. Channel State
+WiFi Sensing's laptop mode reads RSSI, which is one number per link. Channel State
 Information (CSI) is far richer: amplitude (and phase) across dozens of
 subcarriers, per packet. An ESP32 board acting as a CSI receiver unlocks the
 CSI waterfall, labelled trials, and the trial analysis tools already built into
-WiWave. This guide covers buying, flashing, and connecting — no experience with
+WiFi Sensing. This guide covers buying, flashing, and connecting — no experience with
 embedded hardware required.
 
-> Honesty note, in WiWave's tradition: CSI makes *motion research* possible.
-> It does not turn WiWave into a people detector. Treat every output as an
+> Honesty note, in WiFi Sensing's tradition: CSI makes *motion research* possible.
+> It does not turn WiFi Sensing into a people detector. Treat every output as an
 > experiment to be validated in your own room.
 
 ## 1. What to buy
@@ -40,7 +40,7 @@ Most DevKitC boards use a Silicon Labs CP210x USB-to-serial chip.
 
 ## 3. Flash the CSI firmware
 
-WiWave parses the CSV output of Espressif's
+WiFi Sensing parses the CSV output of Espressif's
 [`csi_recv_router`](https://github.com/espressif/esp-csi/tree/master/examples/get-started/csi_recv_router)
 example. Two paths:
 
@@ -73,19 +73,19 @@ correct offsets, after checking that `esptool` is available:
 .\scripts\setup-esp32.ps1 -Port COM3 -BinDir C:\path\to\binaries
 ```
 
-First run installs `esptool` into WiWave's virtual environment.
+First run installs `esptool` into WiFi Sensing's virtual environment.
 
-## 4. Connect the board to WiWave
+## 4. Connect the board to WiFi Sensing
 
 1. The board needs Wi-Fi traffic to observe. Connect it to your router by
    editing the SSID/password in the example's menuconfig, or follow the
    esp-csi `csi_recv_router` README for the router-based setup where the
    board listens to packets on your network.
-2. Start WiWave with the CSI source:
+2. Start WiFi Sensing with the CSI source:
 
    ```powershell
-   $env:WIWAVE_SOURCE = 'esp32_csi'
-   $env:WIWAVE_CSI_PORT = 'COM3'
+   $env:WIFI_SENSING_SOURCE = 'esp32_csi'
+   $env:WIFI_SENSING_CSI_PORT = 'COM3'
    .\.venv\Scripts\python.exe -B server.py
    ```
 
@@ -117,7 +117,7 @@ total, local SQLite only. Nothing leaves your machine until you export.
 | `CSI row does not match firmware header` | Firmware version emits a different CSV layout — rebuild from current esp-csi |
 | Frames stall after a while | Serial buffer overflow; lower the traffic rate or baud, check `dropped` counters in the UI |
 | Waterfall looks like flat noise | Normalize gain: the parser scales each frame; check that packets actually flow (read rate > 0) |
-| Trial start rejected | WiWave must show `LIVE CSI` with fresh frames before trials can start |
+| Trial start rejected | WiFi Sensing must show `LIVE CSI` with fresh frames before trials can start |
 
 ## 7. Doing research properly
 

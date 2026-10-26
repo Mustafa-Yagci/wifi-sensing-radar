@@ -28,7 +28,7 @@ export const DEFAULTS = {
   scenario: 'auto', cycle: 30, dataSource: 'native', wsUrl: '',
 };
 
-export const SETTINGS_VERSION = 'wiwave-1';
+export const SETTINGS_VERSION = 'sensing-1';
 
 export const PRESETS = {
   foundation: {},
@@ -315,7 +315,7 @@ export class HudController {
 
   saveSettings() {
     try {
-      localStorage.setItem('wiwave-observatory-settings', JSON.stringify(this._obs.settings));
+      localStorage.setItem('sensing-observatory-settings', JSON.stringify(this._obs.settings));
     } catch {}
   }
 

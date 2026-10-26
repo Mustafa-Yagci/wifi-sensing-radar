@@ -1,6 +1,6 @@
-# WiWave user guide
+# WiFi Sensing user guide
 
-WiWave v6 is a local Wi-Fi sensing workspace. This guide covers everyday use;
+WiFi Sensing v6 is a local Wi-Fi sensing workspace. This guide covers everyday use;
 [PROJECT_STATUS.md](PROJECT_STATUS.md) tracks what is implemented and verified.
 
 ## Everyday workflow (Windows laptop mode)
@@ -20,14 +20,14 @@ WiWave v6 is a local Wi-Fi sensing workspace. This guide covers everyday use;
 ## Trying it without hardware
 
 - `SIMULATION_MODE=true` — synthetic RSSI demo.
-- `WIWAVE_SOURCE=csi_simulation` — synthetic multi-subcarrier CSI stream that
+- `WIFI_SENSING_SOURCE=csi_simulation` — synthetic multi-subcarrier CSI stream that
   drives the waterfall and the trial tooling. Always labeled as synthetic.
 
 ## Adding an ESP32 CSI receiver
 
 Follow [HARDWARE_GUIDE.md](HARDWARE_GUIDE.md): buy an ESP32-DevKitC (~$5–10),
-flash Espressif's `csi_recv_router` example, set `WIWAVE_SOURCE=esp32_csi` and
-`WIWAVE_CSI_PORT`, and restart. The CSI waterfall, labelled trials and trial
+flash Espressif's `csi_recv_router` example, set `WIFI_SENSING_SOURCE=esp32_csi` and
+`WIFI_SENSING_CSI_PORT`, and restart. The CSI waterfall, labelled trials and trial
 analysis activate automatically once live frames arrive.
 
 ## Collecting labelled CSI trials
@@ -45,5 +45,5 @@ JSONL for offline research. Storage is local and bounded (15,000 frames).
   environment channels.
 - **Spectral bands** describe the signal only; band energy is not breathing or
   footsteps.
-- WiWave never identifies, counts, or locates people. See
+- WiFi Sensing never identifies, counts, or locates people. See
   [REALTIME_RESEARCH.md](REALTIME_RESEARCH.md) for why.

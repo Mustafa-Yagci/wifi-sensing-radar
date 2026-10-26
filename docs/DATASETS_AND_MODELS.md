@@ -3,7 +3,7 @@
 Research reviewed on 2026-09-25. Primary sources are linked below. No paid data,
 private recordings, large training archives or model weights were downloaded.
 
-| Source | What it provides | Appropriate WiWave use |
+| Source | What it provides | Appropriate WiFi Sensing use |
 | --- | --- | --- |
 | [Espressif esp-csi](https://github.com/espressif/esp-csi) | Official CSI capture examples and sensing development tools | Capture raw I/Q CSI on compatible hardware; verify firmware CSV schema against the serial parser |
 | [MM-Fi dataset and loader](https://github.com/ybhbingo/MMFi_dataset) | Synchronized multimodal sensing and annotated poses; official download links | Offline CSI-to-pose research; preserve the published subject/environment splits |
@@ -30,7 +30,7 @@ meters, or works through this room's walls.
 
 The RuView model card itself lists room dependence and weak camera-free pose
 performance. Published embedding or benchmark scores are not proof of this
-computer's human-detection accuracy. WiWave therefore exposes a compatible output
+computer's human-detection accuracy. WiFi Sensing therefore exposes a compatible output
 connection without claiming that a model is installed, trained or validated.
 
 ## Practical integration sequence
@@ -40,7 +40,7 @@ connection without claiming that a model is installed, trained or validated.
    rate on the hardware. **Workspace → CSI data** captures labelled pilot frames
    at up to 10 Hz (the first 512 amplitude bins). The current serial source supports
    Espressif CSV; RuView firmware's binary UDP needs its matching upstream runtime
-   or a new adapter. WiWave's capture omits signed I/Q and phase: confirm that the
+   or a new adapter. WiFi Sensing's capture omits signed I/Q and phase: confirm that the
    model can use magnitude vectors before training.
 2. Collect an empty-room baseline and labelled room trials: empty, one stationary
    person, walking, fan motion, door changes and ordinary network traffic. Record

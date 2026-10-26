@@ -1,14 +1,14 @@
-# WiWave Motion Implementation Plan
+# WiFi Motion Sensing Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** WiWave Motion projesini yerel Windows makinesinde tamamen kurmak, test etmek, çalıştırmak ve kullanıcının her modülün RF/yazılım mantığını öğrenmesini sağlamak.
+**Goal:** WiFi Motion Sensing projesini yerel Windows makinesinde tamamen kurmak, test etmek, çalıştırmak ve kullanıcının her modülün RF/yazılım mantığını öğrenmesini sağlamak.
 
 **Architecture:** Python 3.13 venv üzerinde FastAPI + ctypes Windows Native WLAN + Welch PSD sinyal analizi backend'i ve React 19 + Three.js 3D Gözlemevi frontend'i.
 
 **Tech Stack:** Python 3.13, FastAPI, uvicorn, scipy, numpy, aiosqlite, React 19, Three.js, Vite, Node.js.
 
-**Spec:** `docs/superpowers/specs/2026-10-22-wiwave-motion-design.md`
+**Spec:** `docs/superpowers/specs/2026-10-22-wifi_sensing-motion-design.md`
 
 ## Global Constraints
 
@@ -112,7 +112,7 @@
 - Produces: Canlı HTTP ve WebSocket yayını (`http://127.0.0.1:8000`)
 
 - [ ] **Step 1: Arka planda simülasyon modunda sunucuyu başlat**
-  Run: `$env:SIMULATION_MODE='true'; $env:WIWAVE_SOURCE='rssi_simulation'; .\.venv\Scripts\python.exe -B server.py`
+  Run: `$env:SIMULATION_MODE='true'; $env:WIFI_SENSING_SOURCE='rssi_simulation'; .\.venv\Scripts\python.exe -B server.py`
 - [ ] **Step 2: Sağlık endpoint'ini ve WebSocket akışını doğrula**
   Run: `curl.exe http://127.0.0.1:8000/api/health`
   Run: `.\.venv\Scripts\python.exe scripts/verify-stream.py`

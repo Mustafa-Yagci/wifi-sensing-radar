@@ -1,4 +1,4 @@
-# WiWave API Reference
+# WiFi Sensing API Reference
 
 > Historical pre-v5 API documentation. The live server's current routes are listed
 > in [README](../README.md#api) and its interactive schema at `/docs`.
@@ -21,8 +21,8 @@ Snapshot fields added in v6: `links` (neighbor BSSIDs with `rssi_dbm`, `signal`,
 `spectral_entropy`, `window_s`), `csi_preview` (up to 64 downsampled amplitudes when
 a CSI stream is present), and `alerts_enabled`. `is_simulation` is true for both the
 `simulation` and `csi_simulation` sources. The synthetic CSI source is selected with
-`WIWAVE_SOURCE=csi_simulation`; the neighbor polling cadence is configured with
-`WIWAVE_LINK_POLL_SECONDS` (seconds, default 30, 0 disables).
+`WIFI_SENSING_SOURCE=csi_simulation`; the neighbor polling cadence is configured with
+`WIFI_SENSING_LINK_POLL_SECONDS` (seconds, default 30, 0 disables).
 
 ## Base URL
 
@@ -38,7 +38,7 @@ https://your-domain.com      (production)
 ### GET /
 
 Returns the React SPA (`index.html`) when the frontend is built.  
-Returns `{"message": "WiWave API is running..."}` otherwise.
+Returns `{"message": "WiFi Sensing API is running..."}` otherwise.
 
 ---
 
@@ -403,4 +403,4 @@ class PerformanceStats:
 
 ---
 
-*WiWave v4 · API Reference v1.0*
+*WiFi Sensing v4 · API Reference v1.0*

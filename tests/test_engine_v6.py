@@ -100,7 +100,7 @@ def test_csi_demo_source_is_labelled_synthetic():
 
 
 def test_csi_simulation_source_selectable(monkeypatch):
-    monkeypatch.setenv('WIWAVE_SOURCE', 'csi_simulation')
+    monkeypatch.setenv('WIFI_SENSING_SOURCE', 'csi_simulation')
     source = create_source()
     assert source.source == 'csi_simulation'
 

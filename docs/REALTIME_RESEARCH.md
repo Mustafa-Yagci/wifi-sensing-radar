@@ -1,4 +1,4 @@
-# WiWave: evidence, hardware, and implementation decisions
+# WiFi Sensing: evidence, hardware, and implementation decisions
 
 Research and local inspection: 25 September 2026.
 
@@ -31,7 +31,7 @@ in the repository for reference.
 Windows documents an RSSI query opcode. It also documents connection-quality
 queries, which are useful for network telemetry. Polling a cached driver value
 ten times a second does **not** mean the radio generated ten independent RF
-measurements. WiWave therefore labels this quantity **read rate**. Windows may
+measurements. WiFi Sensing therefore labels this quantity **read rate**. Windows may
 require location permission for queries containing network identity.
 [Native Wi-Fi query opcodes](https://learn.microsoft.com/en-us/windows/win32/api/wlanapi/ne-wlanapi-wlan_intf_opcode)
 

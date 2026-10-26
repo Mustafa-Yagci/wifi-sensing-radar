@@ -2,7 +2,7 @@
 
 ## Overview
 
-This plan implements multi-person Wi-Fi detection for WiWave in incremental stages: core interfaces and data models first, then each signal processing module, followed by backend and frontend integration, performance validation, and finally property-based testing. Each task builds on the previous, ending with full pipeline wiring and correctness verification. Tasks 1–13 and 15 are complete; Tasks 14 (property-based testing) and 16 (user acceptance testing) remain pending.
+This plan implements multi-person Wi-Fi detection for WiFi Sensing in incremental stages: core interfaces and data models first, then each signal processing module, followed by backend and frontend integration, performance validation, and finally property-based testing. Each task builds on the previous, ending with full pipeline wiring and correctness verification. Tasks 1–13 and 15 are complete; Tasks 14 (property-based testing) and 16 (user acceptance testing) remain pending.
 
 ## Tasks
 

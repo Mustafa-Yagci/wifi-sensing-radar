@@ -1,13 +1,13 @@
-# RuView reference and WiWave feature status
+# RuView reference and WiFi Sensing feature status
 
 Updated 2026-09-25. This is a feature comparison, not a claim of complete platform parity.
 
 The reference is [RuView](https://github.com/ruvnet/RuView), pinned at
-`dd02efe2fe129ae8068e9b805ea35aaa660e47dd`. WiWave adapts its MIT-licensed
+`dd02efe2fe129ae8068e9b805ea35aaa660e47dd`. WiFi Sensing adapts its MIT-licensed
 `ui/observatory.html` and eight rendering modules. See
 [the provenance record](../frontend/observatory/PROVENANCE.md).
 
-| Reference feature | WiWave implementation | Evidence / dependency |
+| Reference feature | WiFi Sensing implementation | Evidence / dependency |
 | --- | --- | --- |
 | 3D Observatory room, grid, router, orbit camera | Included | Production build; scene helpers tested; visual browser QA pending |
 | Wireframe skeletons, body segments, aura, scene props | Included for demo; model skeletons need valid keypoints | Procedural skeletons never created from live RSSI |
@@ -28,11 +28,11 @@ The reference is [RuView](https://github.com/ruvnet/RuView), pinned at
 | Multi-node room mapping, measured range and object classification | Not implemented | Hardware geometry, synchronization, algorithms and validation required |
 | Training, LoRA adaptation, model management UI | Not integrated | Research links and connection guidance provided |
 | Firmware flashing, node provisioning and upstream edge/WASM modules | Not integrated | Use upstream tooling and compatible hardware |
-| Full RuView control dashboard and other experimental visualizations | Not ported | This release adapts the Observatory, with a WiWave operations workspace |
+| Full RuView control dashboard and other experimental visualizations | Not ported | This release adapts the Observatory, with a WiFi Sensing operations workspace |
 
 ## Sources and display rules
 
-**Live sensor** connects to `/ws/radar` on WiWave. It displays real RSSI or the
+**Live sensor** connects to `/ws/radar` on WiFi Sensing. It displays real RSSI or the
 configured serial CSI detector. Neither source currently has a validated human
 classifier. Unsupported outputs remain unknown, including when the detector is quiet.
 

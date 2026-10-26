@@ -6,7 +6,7 @@ import HumanSilhouette from './HumanSilhouette';
 import MicroMotionBubbles from './MicroMotionBubbles';
 
 /**
- * Main 3D Scene for the WiWave Radar v4 with multi-person support.
+ * Main 3D Scene for the WiFi Sensing Radar v4 with multi-person support.
  */
 const RadarScene = ({ variance, motionDetected, distance, multiPersonMode, persons }) => {
     // Convert zone names to approximate positions

@@ -1,4 +1,4 @@
-# WiWave implementation status
+# WiFi Sensing implementation status
 
 Updated 2026-09-27 (v6.0.0).
 
@@ -9,7 +9,7 @@ Updated 2026-09-27 (v6.0.0).
 - Separate detailed live monitor, native Windows WLAN capture and calibrated changes.
 - **v6 — Multi-link monitoring:** neighbor access points from the driver's cached
   network list (background netsh read, ~30 s cadence by default, configurable with
-  `WIWAVE_LINK_POLL_SECONDS`) act as extra, slow environment channels. The detector
+  `WIFI_SENSING_LINK_POLL_SECONDS`) act as extra, slow environment channels. The detector
   fuses primary and neighbor channels; a single noisy neighbor cannot trigger alone.
   Verified live on the Intel AC 8265 with multiple visible neighbors.
 - **v6 — Spectral statistics:** rolling 30 s Welch analysis of the primary signal on a

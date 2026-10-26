@@ -26,7 +26,10 @@ yarn-debug.log*
 yarn-error.log*
 
 # Project Specific
+sensing_sessions.db*
 wiwave_sessions.db*
+*.db
+*.db*
 *.sqlite
 *.sqlite3
 *.sqlite3-*

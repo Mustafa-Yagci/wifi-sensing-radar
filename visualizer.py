@@ -18,7 +18,7 @@ class WifiVisualizer:
         self.line, = self.ax.plot([], [], color='#007acc', linewidth=2)
         
         # Add labels and styling
-        self.ax.set_title("WiWave Motion: Live Signal Strength", fontsize=14)
+        self.ax.set_title("WiFi Motion Sensing: Live Signal Strength", fontsize=14)
         self.ax.set_xlabel("Recent Samples", fontsize=10)
         self.ax.set_ylabel("Signal Strength (%)", fontsize=10)
         self.ax.set_ylim(0, 105) # Wi-Fi is 0-100%

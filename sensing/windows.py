@@ -65,7 +65,7 @@ class NativeWifiSource:
         self.selected = []
         self.own_bssid = None
         self.link_failures = 0
-        self.link_poll_s = max(0.0, float(os.getenv('WIWAVE_LINK_POLL_SECONDS', '30') or 0))
+        self.link_poll_s = max(0.0, float(os.getenv('WIFI_SENSING_LINK_POLL_SECONDS', '30') or 0))
         if self.link_poll_s:
             threading.Thread(target=self._neighbor_loop, daemon=True).start()
 

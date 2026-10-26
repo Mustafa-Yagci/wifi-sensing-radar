@@ -34,7 +34,7 @@ from multi_person.modules.calibration_module import CalibrationModule, Calibrati
 # ---------------------------------------------------------------------------
 # Module-level logger — structured, named per module for easy filtering
 # ---------------------------------------------------------------------------
-logger = logging.getLogger("WiWave.MultiPerson.Orchestrator")
+logger = logging.getLogger("WiFi Sensing.MultiPerson.Orchestrator")
 
 
 # ---------------------------------------------------------------------------

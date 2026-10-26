@@ -1,4 +1,4 @@
-"""Inspect a running WiWave stream without modifying calibration or sessions."""
+"""Inspect a running WiFi Sensing stream without modifying calibration or sessions."""
 import argparse
 import asyncio
 import json

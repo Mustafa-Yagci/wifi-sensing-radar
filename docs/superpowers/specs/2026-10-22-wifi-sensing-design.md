@@ -1,14 +1,14 @@
-# WiWave Motion: Sistem Mimarisi, Kurulum ve Sinyal İşleme Eğitim Tasarımı (Design Spec)
+# WiFi Motion Sensing: Sistem Mimarisi, Kurulum ve Sinyal İşleme Eğitim Tasarımı (Design Spec)
 
 **Tarih:** 2026-10-22  
 **Proje Konumu:** `E:\unipa kayıtları\unipa\proje`  
-**Amaç:** WiWave Motion projesini yerel makinede (Windows) sıfırdan kurmak, çalıştırmak, test etmek ve tüm RF/Wi-Fi algılama matematiğini, yazılım mimarisini adım adım öğretmek.
+**Amaç:** WiFi Motion Sensing projesini yerel makinede (Windows) sıfırdan kurmak, çalıştırmak, test etmek ve tüm RF/Wi-Fi algılama matematiğini, yazılım mimarisini adım adım öğretmek.
 
 ---
 
 ## 1. Sistem Mimarisi & Bileşenler
 
-WiWave Motion, tüketici sınıfı Wi-Fi kartlarının yaydığı ve aldığı elektromanyetik dalgalardaki **çok yollu sönümleme (multipath fading)** ve **faz/genlik bozulmalarını** analiz ederek oda içerisindeki hareketleri (insan yürümesi, nefes alma vb.) tespit eden cihazsız (device-free) bir radar sistemidir.
+WiFi Motion Sensing, tüketici sınıfı Wi-Fi kartlarının yaydığı ve aldığı elektromanyetik dalgalardaki **çok yollu sönümleme (multipath fading)** ve **faz/genlik bozulmalarını** analiz ederek oda içerisindeki hareketleri (insan yürümesi, nefes alma vb.) tespit eden cihazsız (device-free) bir radar sistemidir.
 
 Mimari 4 ana katmandan oluşur:
 

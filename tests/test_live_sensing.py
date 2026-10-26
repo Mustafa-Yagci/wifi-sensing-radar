@@ -153,7 +153,7 @@ def test_legacy_recording_can_still_be_exported(tmp_path, monkeypatch):
 
 def test_demo_requires_explicit_selection(monkeypatch):
     monkeypatch.delenv('SIMULATION_MODE', raising=False)
-    monkeypatch.setenv('WIWAVE_SOURCE', 'invalid')
+    monkeypatch.setenv('WIFI_SENSING_SOURCE', 'invalid')
     monkeypatch.setenv('AUTO_SIM_FALLBACK', 'true')
     with pytest.raises(ValueError):
         create_source()

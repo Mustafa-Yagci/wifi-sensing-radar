@@ -6,7 +6,7 @@ import logging
 
 # Setup basic logging
 logging.basicConfig(level=logging.WARNING)
-logger = logging.getLogger("WiWave.DSP")
+logger = logging.getLogger("WiFi Sensing.DSP")
 
 # Optional multi-person detection integration
 try:

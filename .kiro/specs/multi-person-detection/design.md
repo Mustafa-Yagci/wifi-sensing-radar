@@ -1,8 +1,8 @@
-# Design: Multi-Person Detection for WiWave
+# Design: Multi-Person Detection for WiFi Sensing
 
 ## Overview
 
-This document describes the technical design for adding multi-person detection capabilities to WiWave. The system uses Wi-Fi signal analysis (RSSI and RTT) to detect, separate, and track 2-5 people simultaneously.
+This document describes the technical design for adding multi-person detection capabilities to WiFi Sensing. The system uses Wi-Fi signal analysis (RSSI and RTT) to detect, separate, and track 2-5 people simultaneously.
 
 ## Architecture
 

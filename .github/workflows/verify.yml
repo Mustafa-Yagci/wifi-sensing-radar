@@ -1,4 +1,4 @@
-name: Verify WiWave
+name: Verify WiFi Sensing
 on: [push, pull_request]
 permissions:
   contents: read
