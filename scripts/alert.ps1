@@ -1,10 +1,11 @@
-# WiWave local alert: shows a Windows toast notification.
-# Opt-in only, triggered by the WiWave server when a sustained signal change starts.
+# WiFi Sensing local alert: shows a Windows toast notification and plays a beep.
+# Opt-in only, triggered by the sensing server when a sustained signal change starts.
 param(
-    [string]$Title = 'WiWave',
-    [string]$Body = 'Signal change detected.'
+    [string]$Title = 'WiFi Sensing: MOTION DETECTED!',
+    [string]$Body = '⚠️ Signal anomaly motion detected.'
 )
 $ErrorActionPreference = 'Stop'
+try { [Console]::Beep(1000, 300) } catch {}
 try {
     [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
     [Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] | Out-Null

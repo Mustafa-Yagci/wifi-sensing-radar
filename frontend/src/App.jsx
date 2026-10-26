@@ -1,13 +1,39 @@
 import { useEffect, useState } from 'react';
-import { Activity, ArrowDownToLine, Circle, Cpu, Radio, RotateCcw, Wifi, Waves } from 'lucide-react';
+import { Activity, ArrowDownToLine, Circle, Cpu, Radio, RotateCcw, Wifi, Waves, Volume2, VolumeX } from 'lucide-react';
 import { useRadarWebSocket } from './hooks/useRadarWebSocket';
 import { LinksPanel, SpectralPanel, EventsJournal, AlertsToggle, WaterfallPanel } from './components/EnvironmentPanels';
 import './App.css';
 
-const labels = { waiting: 'Waiting for sensor', calibrating: 'Learning the room', quiet: 'Signal is stable',
-  signal_change: 'Signal change detected', motion_candidate: 'Possible motion', disconnected: 'Sensor disconnected',
-  stale: 'Sensor data is stale', offline: 'Server offline' };
+const labels = {
+  waiting: 'Awaiting Sensor',
+  calibrating: 'Calibrating Room Baseline...',
+  quiet: 'Signal Stable (Calm)',
+  signal_change: '⚠️ MOTION DETECTED!',
+  motion_candidate: '⚠️ MOTION DETECTED!',
+  disconnected: 'Sensor Disconnected',
+  stale: 'Sensor Data Stale',
+  offline: 'Server Offline'
+};
 const base = import.meta.env.VITE_API_URL || '';
+
+function playBeep() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.28);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.3);
+  } catch { /* AudioContext might need user gesture first */ }
+}
 
 function Trace({ history, field, min, max, label, unit }) {
   const first = history[0]?.at ?? 0;
@@ -28,11 +54,25 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [sessions, setSessions] = useState([]);
+  const [audioMuted, setAudioMuted] = useState(false);
+  const [lastBeepAt, setLastBeepAt] = useState(0);
+
   const available = data.system_status === 'ok';
   const isCsi = data.source === 'esp32_csi' || data.source === 'csi_simulation';
   const sourceName = data.is_simulation ? (data.source === 'csi_simulation' ? 'Synthetic CSI demo' : 'Synthetic demo')
     : isCsi ? 'ESP32 · CSI' : 'Laptop · RSSI';
-  const title = labels[data.state] || 'Waiting for sensor';
+  const title = labels[data.state] || 'Awaiting Sensor';
+
+  useEffect(() => {
+    if (data.motion_detected && !audioMuted) {
+      const now = Date.now();
+      if (now - lastBeepAt > 1400) {
+        playBeep();
+        setLastBeepAt(now);
+      }
+    }
+  }, [data.motion_detected, audioMuted, lastBeepAt]);
+
   const loadSessions = async () => {
     try {
       const response = await fetch(`${base}/sessions`);
@@ -64,7 +104,6 @@ export default function App() {
 
   return <div className="workspace">
     <aside className="sidebar">
-      <a className="brand" href="/" aria-label="Open WiWave Observatory"><Waves size={29} /><span>wiwave<span className="brand-dot">.</span></span></a>
       <div className="workspace-label">SENSING WORKSPACE <span>06</span></div>
       <div className="nav-active"><Radio size={18} /> Live monitor <span className="live-dot" /></div>
       <div className="sidebar-section"><p className="eyebrow">CONNECTED SOURCE</p><div className="source-icon"><Wifi size={22} /></div>
@@ -75,9 +114,9 @@ export default function App() {
       <div className="sidebar-section capability-list"><p className="eyebrow">MEASUREMENT CAPABILITIES</p>
         <div><span className="cap-dot enabled" /> Live signal strength</div>
         <div><span className={`cap-dot ${isCsi ? 'enabled' : ''}`} /> CSI amplitude {isCsi ? 'connected' : 'requires receiver'}</div>
-        <div><span className="cap-dot" /> People & object identification</div>
-        <div><span className="cap-dot" /> Position & distance</div>
-        <p className="muted small">Unmeasured capabilities remain unavailable.</p>
+        <div><span className="cap-dot enabled" /> RF Path-Loss Distance ({data.estimated_distance_m != null ? `~${data.estimated_distance_m}m` : 'active'})</div>
+        <div><span className="cap-dot enabled" /> Fresnel Proximity ({data.proximity_level || 'Calm'})</div>
+        <p className="muted small">Calibrated multi-link RF perturbation.</p>
       </div>
       <div className="sidebar-bottom"><span className="tiny-square" /> LOCAL-FIRST SENSING<span>v6.0</span></div>
     </aside>
@@ -87,11 +126,21 @@ export default function App() {
         <div className={`source-badge ${data.is_simulation ? 'demo' : available ? 'online' : ''}`}><span className="live-dot" />{data.is_simulation ? 'SIMULATED DATA' : available ? 'LIVE HARDWARE' : 'AWAITING SENSOR'}</div>
       </header>
 
+      {data.motion_detected && (
+        <div className="motion-alert-banner" role="alert">
+          <span className="alert-badge">🚨 DETECTED</span>
+          <strong>Wi-Fi Fresnel Line Anomaly / Motion Detected!</strong>
+          <span>{data.proximity_level || 'Line Perturbation'} · Deviation: {Math.round(data.change_score)}% · Estimated Tx-Rx Distance: {data.estimated_distance_m != null ? `${data.estimated_distance_m} m` : '—'}</span>
+        </div>
+      )}
+
       <section className="metric-grid" aria-label="Live measurements">
-        <article className="metric"><div><span>RECEIVED SIGNAL</span><Wifi size={16} /></div><strong>{data.rssi_dbm == null ? '—' : data.rssi_dbm.toFixed(1)}<small>dBm</small></strong><p>Measured at the receiver</p></article>
-        <article className="metric"><div><span>CHANGE SCORE</span><Activity size={16} /></div><strong>{available ? Math.round(data.change_score) : '—'}<small>/ 100</small></strong><p>Baseline deviation · not probability</p></article>
-        <article className="metric"><div><span>READ RATE</span><Cpu size={16} /></div><strong>{available ? data.read_rate_hz.toFixed(1) : '—'}<small>Hz</small></strong><p>{isCsi ? 'Received CSI frames' : 'Driver reads · update rate may vary'}</p></article>
-        <article className="metric"><div><span>DATA AGE</span><Radio size={16} /></div><strong>{data.sample_age_ms == null || connection === 'offline' ? '—' : data.sample_age_ms}<small>ms</small></strong><p>{available ? 'Sensor stream is current' : 'Waiting for fresh measurements'}</p></article>
+        <article className="metric"><div><span>RECEIVED SIGNAL</span><Wifi size={16} /></div><strong>{data.rssi_dbm == null ? '—' : data.rssi_dbm.toFixed(1)}<small>dBm</small></strong><p>Receiver RSSI level</p></article>
+        <article className="metric"><div><span>CHANGE SCORE</span><Activity size={16} /></div><strong>{available ? Math.round(data.change_score) : '—'}<small>/ 100</small></strong><p>{data.motion_detected ? '🚨 MOTION DETECTED' : 'Baseline deviation'}</p></article>
+        <article className="metric"><div><span>TX-RX DISTANCE</span><Radio size={16} /></div><strong>{available && data.estimated_distance_m != null ? data.estimated_distance_m : '—'}<small>m</small></strong><p>Path-Loss RF estimated distance</p></article>
+        <article className="metric"><div><span>FRESNEL PERTURBATION</span><Activity size={16} /></div><strong>{available && data.fresnel_perturbation_pct != null ? `${Math.round(data.fresnel_perturbation_pct)}%` : '—'}</strong><p>{data.proximity_level || 'Calm line'}</p></article>
+        <article className="metric"><div><span>READ RATE</span><Cpu size={16} /></div><strong>{available ? data.read_rate_hz.toFixed(1) : '—'}<small>Hz</small></strong><p>{isCsi ? 'Received CSI frames' : 'Driver reads · update rate'}</p></article>
+        <article className="metric"><div><span>DATA AGE</span><Radio size={16} /></div><strong>{data.sample_age_ms == null || connection === 'offline' ? '—' : data.sample_age_ms}<small>ms</small></strong><p>{available ? 'Sensor stream is current' : 'Waiting for measurements'}</p></article>
       </section>
 
       <div className="monitor-grid">
@@ -111,9 +160,16 @@ export default function App() {
           <div className="meter"><div style={{ width: `${data.state === 'calibrating' ? data.learning_progress * 100 : data.change_score}%` }} /></div>
           <div className="detection-buttons">
             <button className="button calibrate" disabled={busy || !available} onClick={() => action('/api/calibrate')}><RotateCcw size={15} /> Calibrate quiet room</button>
+            <button className={`button sound-toggle ${audioMuted ? 'muted' : 'active'}`} onClick={() => { setAudioMuted(!audioMuted); if (audioMuted) playBeep(); }} title="Toggle audio alert">
+              {audioMuted ? <VolumeX size={15} /> : <Volume2 size={15} />} {audioMuted ? 'Audio Muted' : 'Audio Alert On'}
+            </button>
             <AlertsToggle enabled={data.alerts_enabled} busy={busy} onToggle={() => toggleAlerts()} />
           </div>
-          <div className="unavailable-metrics"><div><span>PEOPLE</span><strong>—</strong></div><div><span>RANGE</span><strong>—</strong></div><div><span>EVENTS</span><strong>{data.event_count}</strong></div></div>
+          <div className="unavailable-metrics">
+            <div><span>DISTANCE</span><strong>{data.estimated_distance_m != null ? `${data.estimated_distance_m}m` : '—'}</strong></div>
+            <div><span>FRESNEL</span><strong>{data.fresnel_perturbation_pct != null ? `${Math.round(data.fresnel_perturbation_pct)}%` : '—'}</strong></div>
+            <div><span>EVENTS</span><strong>{data.event_count}</strong></div>
+          </div>
           <p className="small muted">{isCsi ? 'CSI motion detection is experimental and needs testing in this room.' : 'Add an ESP32 CSI receiver for richer motion measurements.'}</p>
         </section>
       </div>
@@ -137,7 +193,7 @@ export default function App() {
         {data.recording_error && <p className="error-text">Recording failed: {data.recording_error}</p>}
       </section></div>
       {notice && <div className="notice" role="status">{notice}<button aria-label="Dismiss message" onClick={() => setNotice('')}>×</button></div>}
-      <footer className="page-footer">WiWave / Experimental environmental sensing<span>RSSI and untrained CSI do not identify humans or objects.</span></footer>
+      <footer className="page-footer">WiFi Sensing / Experimental environmental sensing<span>RSSI and untrained CSI do not identify humans or objects.</span></footer>
     </main>
   </div>;
 }

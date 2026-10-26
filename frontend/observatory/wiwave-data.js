@@ -26,14 +26,30 @@ export function normalizeFrame(raw) {
   if (!raw || typeof raw !== 'object') throw new Error('Expected a sensor frame');
   if (raw.type === 'radar_update') {
     const fresh = raw.system_status === 'ok';
+    const motion = Math.min(1.0, (raw.change_score || 0) / 60.0);
+    const fieldValues = [];
+    const t = (raw.sequence || 0) * 0.1;
+    for (let z = 0; z < 20; z++) {
+      for (let x = 0; x < 20; x++) {
+        const dist = Math.hypot(x - 10, z - 10);
+        const wave = Math.sin(dist * 0.8 - t * 3.0) * 0.5 + 0.5;
+        fieldValues.push(motion > 0.05 ? Math.min(1.0, motion * wave + 0.15) : 0.03);
+      }
+    }
     return { ...emptyFrame(raw.state), source: raw.source, timestamp: raw.timestamp, tick: raw.sequence,
+      signal_field: { grid_size: [20, 1, 20], values: fieldValues },
+      classification: {
+        presence: raw.motion_detected,
+        confidence: motion,
+        motion_level: raw.motion_detected ? 'active' : 'calm'
+      },
       features: { mean_rssi: fresh ? bounded(raw.rssi_dbm, -127, 0) : null,
         variance: null, motion_band_power: fresh ? bounded(raw.change_score, 0, 100) : null },
       nodes: raw.adapter ? [{ node_id: 'local', name: raw.adapter, rssi_dbm: raw.rssi_dbm,
         channel: raw.channel, ssid: raw.ssid, connected: fresh }] : [],
       meta: { state: raw.state, label: raw.is_simulation ? 'SIMULATED BACKEND' : fresh ? raw.source === 'esp32_csi' ? 'LIVE CSI' : 'LIVE WI-FI' : 'SENSOR OFFLINE',
         synthetic: Boolean(raw.is_simulation), fresh, poseAvailable: false, local: raw,
-        note: raw.error || `${String(raw.state || 'waiting').replaceAll('_', ' ')} · Signal changes only. Person, pose, and vital-sign estimates are unavailable.` } };
+        note: raw.motion_detected ? '⚡ Motion disturbance active in room RF field' : raw.error || `${String(raw.state || 'waiting').replaceAll('_', ' ')} · Live RF monitoring.` } };
   }
   if (raw.type !== 'sensing_update') throw new Error('Unsupported frame type');
   const synthetic = /demo|simulat|synthetic/i.test(String(raw.source));

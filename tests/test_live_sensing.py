@@ -196,3 +196,32 @@ def test_stale_snapshot_clears_detection_and_never_invents_people():
     assert data['person_count'] is None
     assert data['distance'] is None
     assert data['capabilities']['human_detection'] is False
+
+
+def test_locked_calibration_persists_across_gaps_and_neighbors():
+    detector = ChangeDetector(calibration_seconds=5, lock_calibration=True)
+    # Calibrate for 5 seconds with 1 neighbor
+    for i in range(61):
+        sample = {'source': 'native_rssi', 'rssi_dbm': -50 + 0.1 * math.sin(i), 'link_id': 'ap1', 'channel': 6,
+                  'links': [{'bssid': 'n1', 'rssi_dbm': -70}]}
+        res = detector.update(sample, i / 10)
+    assert res['state'] == 'quiet'
+    assert res['is_calibrated'] is True
+
+    # Neighbor drops (only primary link remains) -> should NOT reset to calibrating
+    sample_no_neighbor = {'source': 'native_rssi', 'rssi_dbm': -50, 'link_id': 'ap1', 'channel': 6, 'links': []}
+    res2 = detector.update(sample_no_neighbor, 6.2)
+    assert res2['state'] == 'quiet'
+    assert res2['is_calibrated'] is True
+
+    # 10 second gap -> should NOT reset to calibrating
+    res3 = detector.update(sample_no_neighbor, 16.5)
+    assert res3['state'] == 'quiet'
+    assert res3['is_calibrated'] is True
+
+    # Explicit reset -> DOES reset to calibrating
+    detector.reset()
+    res4 = detector.update(sample_no_neighbor, 17.0)
+    assert res4['state'] == 'calibrating'
+    assert res4['is_calibrated'] is False
+

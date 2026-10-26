@@ -9,9 +9,10 @@ import numpy as np
 
 
 class ChangeDetector:
-    def __init__(self, calibration_seconds=20.0, window_seconds=2.0):
+    def __init__(self, calibration_seconds=20.0, window_seconds=2.0, lock_calibration=False):
         self.calibration_seconds = calibration_seconds
         self.window_seconds = window_seconds
+        self.lock_calibration = lock_calibration
         self.reset()
 
     def reset(self):
@@ -45,10 +46,29 @@ class ChangeDetector:
             if scale <= 0:
                 raise ValueError('CSI frame contains no signal')
             values = values / scale
-        key = (sample['source'], sample.get('link_id'), sample.get('channel'), len(values))
-        if key != self.source_key or (self.last_time is not None and now - self.last_time > 3):
-            self.reset()
-            self.source_key = key
+
+        if self.lock_calibration and self.center is not None:
+            # When calibration is locked, do not reset on neighbor count changes or timing gaps.
+            # Only reset if the fundamental Wi-Fi link / BSSID or channel changes:
+            link_changed = (self.source_key is not None and (
+                sample['source'] != self.source_key[0] or
+                sample.get('link_id') != self.source_key[1] or
+                sample.get('channel') != self.source_key[2]
+            ))
+            if link_changed:
+                self.reset()
+                self.source_key = (sample['source'], sample.get('link_id'), sample.get('channel'), len(values))
+            else:
+                target_len = len(self.center)
+                if len(values) > target_len:
+                    values = values[:target_len]
+                elif len(values) < target_len:
+                    values = np.concatenate([values, self.center[len(values):]])
+        else:
+            key = (sample['source'], sample.get('link_id'), sample.get('channel'), len(values))
+            if key != self.source_key or (self.last_time is not None and now - self.last_time > 3):
+                self.reset()
+                self.source_key = key
         if self.last_time is not None and now <= self.last_time:
             raise ValueError('Samples must be ordered by acquisition time')
         self.last_time = now
@@ -115,9 +135,10 @@ class ChangeDetector:
         return {
             'state': state, 'learning_progress': round(progress, 3),
             'change_score': round(score, 1), 'motion_detected': self.active,
+            'is_calibrated': self.center is not None,
             'read_rate_hz': round(rate, 2) if math.isfinite(rate) else 0,
             'event_count': self.events,
             'baseline_rssi_dbm': round(float(self.center[0]), 1)
-            if self.center is not None and len(self.center) == 1 else None,
+            if self.center is not None and len(self.center) >= 1 else None,
             'link_change': links,
         }

@@ -267,7 +267,7 @@ export class HudController {
       const blob = new Blob([JSON.stringify(s, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = 'wiwave-observatory-settings.json';
+      a.download = 'sensing-observatory-settings.json';
       a.click();
     });
     document.getElementById('btn-reset-settings').addEventListener('click', () => {

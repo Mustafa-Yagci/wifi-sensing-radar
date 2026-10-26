@@ -58,6 +58,8 @@ class NativeWifiSource:
         self.api.WlanFreeMemory.argtypes = [ptr]
         for name in ('WlanOpenHandle', 'WlanEnumInterfaces', 'WlanQueryInterface', 'WlanCloseHandle'):
             getattr(self.api, name).restype = u32
+        self.api.WlanGetNetworkBssList.argtypes = [ptr, c.POINTER(GUID), ptr, u32, c.c_bool, ptr, c.POINTER(ptr)]
+        self.api.WlanGetNetworkBssList.restype = u32
         self.api.WlanFreeMemory.restype = None
         self.neighbors = {}
         self.selected = []
@@ -82,6 +84,20 @@ class NativeWifiSource:
             return structure.from_buffer_copy(c.string_at(memory, c.sizeof(structure)))
         finally:
             self.api.WlanFreeMemory(memory)
+
+    def query_bss_rssi(self, guid):
+        bss_list_ptr = c.c_void_p()
+        ret = self.api.WlanGetNetworkBssList(self.handle, c.byref(guid), None, 1, 0, None, c.byref(bss_list_ptr))
+        if ret == 0 and bss_list_ptr.value:
+            try:
+                total = c.c_uint32.from_address(bss_list_ptr.value + 4).value
+                if total > 0:
+                    val = c.c_int32.from_address(bss_list_ptr.value + 64).value
+                    if -127 <= val <= 0:
+                        return val
+            finally:
+                self.api.WlanFreeMemory(bss_list_ptr)
+        return None
 
     @staticmethod
     def visible_networks():
@@ -182,9 +198,19 @@ class NativeWifiSource:
             if not connected:
                 raise OSError('No connected Wi-Fi adapter. Connect to your router and retry.')
             interface = connected[0]
-            rssi = self.query(interface.guid, 0x10000102, c.c_int32).value
+            bss_rssi = self.query_bss_rssi(interface.guid)
+            if bss_rssi is not None and bss_rssi < 0:
+                rssi = bss_rssi
+            else:
+                raw_rssi = self.query(interface.guid, 0x10000102, c.c_int32).value
+                if raw_rssi > 127:
+                    rssi = c.c_int8(raw_rssi & 0xFF).value
+                elif raw_rssi > 0:
+                    rssi = 0
+                else:
+                    rssi = raw_rssi
             if not -127 <= rssi <= 0:
-                raise OSError('Wi-Fi driver returned an invalid RSSI')
+                raise OSError(f'Wi-Fi driver returned an invalid RSSI: {rssi}')
             connection = self.query(interface.guid, 7, Connection)
             association = connection.association
             bssid = ':'.join(f'{b:02X}' for b in association.bssid)

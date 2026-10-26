@@ -22,7 +22,7 @@ def get_json(url: str, timeout: float = 5.0) -> dict:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="WiWave live smoke test")
+    parser = argparse.ArgumentParser(description="WiFi Sensing live smoke test")
     parser.add_argument("--base", default="http://127.0.0.1:8000")
     parser.add_argument("--samples", type=int, default=5)
     parser.add_argument("--interval", type=float, default=1.5)

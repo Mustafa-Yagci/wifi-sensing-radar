@@ -42,7 +42,7 @@ $env:SIMULATION_MODE = 'false'
 $env:WIWAVE_CSI_PORT = $Port
 $env:WIWAVE_CSI_BAUD = [string]$Baud
 $env:WIWAVE_HOST = '127.0.0.1'
-Write-Host "WiWave CSI receiver: $Port at $Baud baud. Open http://127.0.0.1:8000 and choose Workspace > CSI data."
+Write-Host "WiFi Sensing CSI receiver: $Port at $Baud baud. Open http://127.0.0.1:8000 and choose Workspace > CSI data."
 Write-Host 'CSI collection remains off until you explicitly start a labelled trial.'
 & $pythonPath -B (Join-Path $projectRoot 'server.py')
 exit $LASTEXITCODE

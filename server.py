@@ -1,4 +1,4 @@
-"""WiWave live sensing server. Neither RSSI nor untrained CSI identifies people."""
+"""WiFi Sensing live server. Neither RSSI nor untrained CSI identifies people."""
 import asyncio
 from contextlib import asynccontextmanager, suppress
 import csv
@@ -22,6 +22,9 @@ import uvicorn
 from sensing.detector import ChangeDetector
 from sensing.sources import create_source
 from sensing.spectral import SpectralAnalyzer
+from sensing.v2 import AdaptiveChangeDetector, TrafficPacer, ButterworthBandpass, CsiNormalizer, HampelFilter
+
+ENGINE_VERSION = os.getenv('WIWAVE_ENGINE_VERSION', 'v2').lower()
 
 ROOT = Path(__file__).resolve().parent
 DB_PATH = os.getenv('WIWAVE_DB_PATH', str(ROOT / 'wiwave_sessions.db'))
@@ -37,10 +40,53 @@ def utc_now():
     return datetime.now(timezone.utc).isoformat()
 
 
+def estimate_rf_distance_and_proximity(rssi_dbm, baseline_dbm, change_score, motion_detected):
+    """Estimate Tx-Rx distance using indoor Log-Distance Path Loss model
+    and calculate Fresnel zone perturbation proximity ratio."""
+    if rssi_dbm is None:
+        return None, 0.0, 'Bilinmiyor'
+    try:
+        a_1m = float(os.getenv('WIWAVE_REF_RSSI_1M', '-40.0'))
+        n_exp = float(os.getenv('WIWAVE_PATH_LOSS_EXP', '2.2'))
+        ratio = (a_1m - float(rssi_dbm)) / (10.0 * n_exp)
+        est_d = round(float(np.clip(10.0 ** ratio, 0.5, 30.0)), 1)
+    except Exception:
+        est_d = None
+
+    fresnel_pct = round(float(np.clip(change_score or 0.0, 0.0, 100.0)), 1)
+    if not motion_detected or fresnel_pct < 15.0:
+        proximity_level = 'Calm / Clear Line'
+    elif fresnel_pct >= 65.0:
+        proximity_level = 'Directly on Line (Very Close)'
+    elif fresnel_pct >= 35.0:
+        proximity_level = 'Fresnel Zone (Medium Proximity)'
+    else:
+        proximity_level = 'Ambient Perturbation (Distant)'
+
+    return est_d, fresnel_pct, proximity_level
+
+
 class Runtime:
     def __init__(self, source):
         self.source = source
-        self.detector = ChangeDetector(CALIBRATION_SECONDS)
+        if ENGINE_VERSION == 'v2':
+            self.detector = AdaptiveChangeDetector(
+                CALIBRATION_SECONDS,
+                lock_calibration=os.getenv('WIWAVE_LOCK_CALIBRATION', '1').lower() in {'1', 'true', 'yes'},
+                drift_alpha=float(os.getenv('WIWAVE_DRIFT_ALPHA', '0.005')),
+                enable_hampel=os.getenv('WIWAVE_HAMPEL', '1').lower() in {'1', 'true', 'yes'}
+            )
+            if self.source.source == 'native_rssi' and os.getenv('WIWAVE_TRAFFIC_PACER', '1').lower() in {'1', 'true', 'yes'}:
+                self.pacer = TrafficPacer(rate_hz=20.0)
+                self.pacer.start()
+            else:
+                self.pacer = None
+        else:
+            self.detector = ChangeDetector(
+                CALIBRATION_SECONDS,
+                lock_calibration=os.getenv('WIWAVE_LOCK_CALIBRATION', '1').lower() in {'1', 'true', 'yes'}
+            )
+            self.pacer = None
         self.spectral = SpectralAnalyzer(rate_hz=READ_RATE)
         self.last_received = None
         self.latest = {}
@@ -81,14 +127,20 @@ class Runtime:
             'links': self.latest.get('links', []),
             'spectral': self.latest.get('spectral') if fresh else None,
             'csi_preview': self.latest.get('csi_preview') if fresh else None,
-            'distance': None, 'bpm': None, 'person_count': None, 'persons': [],
+            'distance': None,
+            'estimated_distance_m': self.latest.get('estimated_distance_m') if fresh else None,
+            'fresnel_perturbation_pct': self.latest.get('fresnel_perturbation_pct', 0.0) if fresh else 0.0,
+            'proximity_level': self.latest.get('proximity_level', 'Calm') if fresh else 'Unknown',
+            'bpm': None, 'person_count': None, 'persons': [],
             'multi_person_mode': 'unavailable', 'active_zone': 'Unknown',
             'capabilities': {'signal_monitoring': self.source.source != 'unavailable',
                              'csi': self.source.source in ('esp32_csi', 'csi_simulation'),
                              'multi_link': self.source.source == 'native_rssi',
                              'human_detection': False,
                              'person_count': False, 'localization': False,
-                             'object_classification': False, 'vital_signs': False},
+                             'object_classification': False, 'vital_signs': False,
+                             'engine_version': ENGINE_VERSION,
+                             'drift_compensation': ENGINE_VERSION == 'v2'},
             'recording': self.session_id is not None, 'session_id': self.session_id,
             'recording_error': self.recording_error,
             'alerts_enabled': self.alerts_enabled,
@@ -98,7 +150,7 @@ class Runtime:
                           if self.csi_trial else None),
         })
         if not fresh:
-            result.update(motion_detected=False, change_score=0, read_rate_hz=0, signal=None, rssi_dbm=None)
+            result.update(motion_detected=False, change_score=0, read_rate_hz=0, signal=None, rssi_dbm=None, distance=None, estimated_distance_m=None)
         return result
 
     def observe_event(self, detection, now):
@@ -120,7 +172,8 @@ class Runtime:
             self.event_frames = [frame]
             self.event_started_mono = now
             if self.alerts_enabled:
-                asyncio.create_task(self.fire_alert())
+                with suppress(RuntimeError):
+                    asyncio.create_task(self.fire_alert())
         elif motion and self.pending_event:
             self.pending_event['peak_change_score'] = max(self.pending_event['peak_change_score'],
                                                           detection.get('change_score', 0))
@@ -152,13 +205,23 @@ class Runtime:
             self.event_queue.put_nowait(event)
 
     async def fire_alert(self):
+        # Trigger PC hardware beep on Windows
+        try:
+            import winsound
+            await asyncio.to_thread(winsound.Beep, 1000, 300)
+        except Exception:
+            pass
+
         script = ROOT / 'scripts' / 'alert.ps1'
         if not script.exists():
             return
+        score = round(self.latest.get('change_score', 0)) if hasattr(self, 'latest') else 0
+        prox = self.latest.get('proximity_level', 'Fresnel Line Perturbation') if hasattr(self, 'latest') else ''
         with suppress(Exception):
             await asyncio.create_subprocess_exec(
                 'powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', str(script),
-                '-Title', 'WiWave signal change', '-Body', 'A sustained Wi-Fi signal change was detected.',
+                '-Title', 'WiFi Sensing: MOTION DETECTED!',
+                '-Body', f'⚠️ Anomaly / Motion Detected! ({prox}) Deviation: {score}%',
                 stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
 
     async def write_events(self):
@@ -200,6 +263,16 @@ class Runtime:
                     if sample.get('amplitudes'):
                         step = max(1, round(len(sample['amplitudes']) / 64))
                         self.latest['csi_preview'] = [round(float(v), 2) for v in sample['amplitudes'][::step][:64]]
+                    est_d, fresnel_pct, proximity_level = estimate_rf_distance_and_proximity(
+                        sample.get('rssi_dbm'),
+                        detection.get('baseline_rssi_dbm'),
+                        detection.get('change_score', 0),
+                        detection.get('motion_detected', False)
+                    )
+                    self.latest['distance'] = est_d
+                    self.latest['estimated_distance_m'] = est_d
+                    self.latest['fresnel_perturbation_pct'] = fresnel_pct
+                    self.latest['proximity_level'] = proximity_level
                     self.last_received = now
                     self.error = None
                     self.observe_event(detection, now)
@@ -363,6 +436,8 @@ async def lifespan(app):
         for task in tasks:
             task.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
+        if hasattr(runtime, 'pacer') and runtime.pacer:
+            runtime.pacer.stop()
         await asyncio.to_thread(runtime.source.close)
         if runtime.session_id is not None:
             async with aiosqlite.connect(DB_PATH) as db:
@@ -370,7 +445,7 @@ async def lifespan(app):
                 await db.commit()
 
 
-app = FastAPI(title='WiWave Live Sensing', version='6.0.0', lifespan=lifespan)
+app = FastAPI(title='WiFi Sensing Live', version='6.0.0', lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=ORIGINS, allow_methods=['GET', 'POST'], allow_headers=['Content-Type'])
 
 
@@ -787,11 +862,12 @@ async def frontend_page(path: str):
     if path.startswith(('api/', 'session/', 'ws/')):
         raise HTTPException(404)
     if not (frontend / 'index.html').exists():
-        return {'message': 'WiWave API is running. Build frontend with npm run build.', 'health': '/api/health'}
+        return {'message': 'WiFi Sensing API is running. Build frontend with npm run build.', 'health': '/api/health'}
     candidate = (frontend / path).resolve()
     if not candidate.is_relative_to(frontend.resolve()):
         raise HTTPException(404)
-    return FileResponse(candidate if path and candidate.is_file() else frontend / 'index.html')
+    target_file = candidate if path and candidate.is_file() else frontend / 'index.html'
+    return FileResponse(target_file, headers={'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache', 'Expires': '0'})
 
 
 if __name__ == '__main__':
