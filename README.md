@@ -33,8 +33,13 @@ It was engineered as a truthful, scientific alternative to fake "WiFi radar" dem
 
 ## 🖥️ Live Radar Monitor Interface
 
-![WiFi Sensing Live Radar Monitor](assets/current-live-monitor.png)
-*Actual live screenshot from the active V2 system: Real-time RSSI signal changes, path-loss distance, Fresnel perturbation, and spectral link analysis.*
+### 1. Signal Stable (Calm Room / Calibrated Baseline)
+![WiFi Sensing Live Radar Monitor - Signal Stable](assets/current-live-monitor.png)
+*Quiet room state: Baseline learned, ambient drift compensation active, RSSI stable at -57 dBm, read rate locked at 9.1 Hz.*
+
+### 2. Motion Detected (Wi-Fi Fresnel Line Perturbation)
+![WiFi Sensing Live Radar Monitor - Motion Detected](assets/current-motion-detected.png)
+*Active motion state: Fresnel anomaly alert triggered (🚨 DETECTED), Change Score spikes to 74/100, Tx-Rx estimated distance drops to 3.4 m, and active radar ripples pulse.*
 
 ---
 
