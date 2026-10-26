@@ -1,0 +1,296 @@
+import { emptyFrame, normalizeFrame } from './wiwave-data.js';
+
+const el = id => document.getElementById(id);
+const show = (id, value) => { const node = el(id); if (node) node.textContent = value ?? '—'; };
+const format = (value, suffix = '') => Number.isFinite(value) ? `${value.toFixed(1)}${suffix}` : '—';
+async function api(path, method = 'GET', body = null) {
+  const response = await fetch(path, { method, signal: AbortSignal.timeout(8000),
+    ...(body ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}) });
+  if (!response.ok) throw new Error(`Request failed (${response.status})`);
+  return response.json();
+}
+
+export class WorkspaceControls {
+  constructor(observatory) {
+    this.obs = observatory;
+    this.page = 'operations';
+    this.lastUpdate = 0;
+    this.requestId = 0;
+    el('workspace-btn').onclick = () => this.open();
+    el('workspace-close').onclick = () => this.close();
+    el('workspace-overlay').onclick = event => { if (event.target === el('workspace-overlay')) this.close(); };
+    el('workspace-overlay').onkeydown = event => {
+      if (event.key !== 'Tab') return;
+      const focusable = [...el('workspace-overlay').querySelectorAll('button:not(:disabled),a,input,select')];
+      const first = focusable[0], last = focusable.at(-1);
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    el('workspace-tabs').onclick = event => { if (event.target.dataset.page) { this.page = event.target.dataset.page; this.render(); } };
+    el('mode-native').onclick = () => this.setMode('native');
+    el('mode-demo').onclick = () => this.setMode('demo');
+    el('mode-server').onclick = () => {
+      this.setMode('ws');
+      if (!this.obs._hud.settingsOpen) this.obs._hud.toggleSettings();
+      document.querySelector('[data-stab="data"]').click();
+      el('opt-ws-url').focus();
+    };
+    el('playback-exit').onclick = () => this.setMode('native');
+    el('playback-pause').onclick = () => { this.obs._paused = !this.obs._paused; };
+    el('playback-seek').oninput = event => {
+      if (this.replay) this.replay.time = Number(event.target.value);
+      this.obs._hud._rssiHistory = [];
+    };
+    el('playback-speed').onchange = event => { if (this.replay) this.replay.speed = Number(event.target.value); };
+  }
+  get isOpen() { return !el('workspace-overlay').hidden; }
+  setMode(mode) { this.requestId++; this.obs.selectSource(mode); this.obs._hud.saveSettings(); this.render(); }
+  open() { this.focusBefore = document.activeElement; el('workspace-overlay').hidden = false; this.render(); el('workspace-close').focus(); }
+  close() { el('workspace-overlay').hidden = true; this.focusBefore?.focus(); }
+  notice(message) { show('workspace-notice', message); }
+  async action(button, path) {
+    button.disabled = true;
+    let message;
+    try { const result = await api(path, 'POST'); message = result.message || 'Done'; }
+    catch (error) { message = error.message; }
+    finally { button.disabled = false; this.render(); this.notice(message); }
+  }
+  render() {
+    if (!this.isOpen) return;
+    this.requestId++;
+    this.notice('');
+    document.querySelectorAll('[data-page]').forEach(button => button.classList.toggle('active', button.dataset.page === this.page));
+    const content = el('workspace-content');
+    if (this.page === 'operations') {
+      content.innerHTML = `<p class="workspace-intro">Capture a quiet baseline, watch signal changes, and record this computer’s sensor.</p>
+        <div class="workspace-metrics"><div>Sensor state<strong id="op-state">—</strong></div><div>Driver reads<strong id="op-rate">—</strong></div><div>Sample age<strong id="op-age">—</strong></div><div>Baseline<strong id="op-progress">—</strong></div></div>
+        <div class="workspace-actions"><button id="op-calibrate">Calibrate empty room</button><button id="op-record">Start recording</button><button id="op-stop">Stop recording</button></div>
+        <p id="op-recording"></p><p id="op-error" role="status"></p><p class="workspace-muted">Calibration takes about 20 seconds. Stay still and keep doors and furniture unchanged. A signal change can come from movement or radio interference; it does not identify a person.</p>`;
+      el('op-calibrate').onclick = event => this.action(event.target, '/api/calibrate');
+      el('op-record').onclick = event => this.action(event.target, '/session/start?name=Observatory%20capture');
+      el('op-stop').onclick = event => this.action(event.target, '/session/stop');
+    } else if (this.page === 'devices') {
+      content.innerHTML = '<p class="workspace-intro">Devices reported by the selected stream</p><div id="device-list"></div><p class="workspace-muted">The 3D room and router are a visual template. They do not measure room dimensions, object positions, or sensing range.</p>';
+    } else if (this.page === 'sessions') {
+      content.innerHTML = '<p class="workspace-intro">Local recordings · original timestamps and source labels are preserved.</p><button id="sessions-refresh">Refresh recordings</button><div id="session-list">Loading…</div>';
+      el('sessions-refresh').onclick = () => this.loadSessions();
+      this.loadSessions();
+    } else if (this.page === 'dataset') {
+      content.innerHTML = `<p class="workspace-intro">Collect short, manually labelled CSI amplitude trials</p><p id="trial-live-device"></p>
+        <p>First flash Espressif's <a href="https://github.com/espressif/esp-csi/tree/master/examples/get-started/csi_recv_router" target="_blank" rel="noreferrer">csi_recv_router</a>, install the optional serial requirements, set WIWAVE_SOURCE=esp32_csi and WIWAVE_CSI_PORT, then restart WiWave.</p>
+        <label class="trial-input">Trial name <input id="trial-name" maxlength="80" value="Room trial"></label>
+        <label class="trial-input">Current room label <select id="trial-label"><option value="empty_room">Empty room</option><option value="person_still">Person present, still</option><option value="person_moving">Person moving</option><option value="fan_interference">Fan / airflow interference</option><option value="door_change">Door / furniture change</option><option value="pet_or_other_motion">Pet / other motion</option></select></label>
+        <label class="trial-input">Maximum time <select id="trial-seconds"><option value="30">30 seconds</option><option value="60">1 minute</option><option value="120" selected>2 minutes</option><option value="180">3 minutes</option></select></label>
+        <div class="workspace-actions"><button id="trial-start">Start CSI trial</button><button id="trial-label-mark">Apply label to new frames</button><button id="trial-stop">Stop trial</button></div>
+        <p id="trial-status" role="status">CSI trials are opt-in and require a connected CSI stream.</p>
+        <p class="workspace-muted">Starts storing up to 10 CSI amplitude frames/s in the local SQLite database (maximum 180 seconds, 512 amplitudes/frame and 15,000 total samples). Labels describe the room condition you observe; they do not create model predictions. Signed I/Q phase, BSSID, and person identity are not stored. Shared participant data should be collected only with consent. Download or remove trials below.</p>
+        <div id="csi-trial-list"></div><div id="trial-analysis"></div>`;
+      el('trial-start').onclick = () => this.startCsiTrial();
+      el('trial-label-mark').onclick = () => this.labelCsiTrial();
+      el('trial-stop').onclick = () => this.stopCsiTrial();
+      this.loadCsiTrials();
+    } else if (this.page === 'models') {
+      content.innerHTML = `<p class="workspace-intro">Research sources and model connection</p><p>The local backend has a signal-change detector. Human count, pose, falls, and vital signs require a separate compatible CSI sensing engine and validation in your room.</p>
+        <p>Connect a RuView server using its WebSocket endpoint in Settings → Data. Valid 17-keypoint model outputs can be displayed; confidence-zero or heuristic person locations do not create skeletons.</p>
+        <div class="research-links"><a href="https://github.com/espressif/esp-csi" target="_blank" rel="noreferrer">Espressif · CSI capture & firmware ↗</a><a href="https://github.com/ybhbingo/MMFi_dataset" target="_blank" rel="noreferrer">MM-Fi · pose dataset & official loader ↗</a><a href="https://tns.thss.tsinghua.edu.cn/widar3.0/" target="_blank" rel="noreferrer">Tsinghua Widar 3.0 · gesture dataset ↗</a><a href="https://github.com/xyanchen/WiFi-CSI-Sensing-Benchmark" target="_blank" rel="noreferrer">SenseFi / NTU-Fi · activity benchmarks ↗</a><a href="https://huggingface.co/ruvnet/wifi-densepose-pretrained" target="_blank" rel="noreferrer">RuView · pretrained model card ↗</a></div>
+        <p class="workspace-muted">These datasets are research inputs, not proof that a model will work on this laptop’s RSSI. Model weights and training datasets have not been installed. See docs/DATASETS_AND_MODELS.md in the repository.</p>`;
+    } else {
+      content.innerHTML = `<p class="workspace-intro">Implemented features and hardware dependencies</p><table class="feature-table"><thead><tr><th>Feature</th><th>Status</th></tr></thead><tbody>
+        <tr><td>RuView Observatory scene, camera, style presets, rendering settings</td><td>Implemented</td></tr><tr><td>All 12 upstream scenarios</td><td>Explicit synthetic demos</td></tr><tr><td>Windows live RSSI, calibration, signal changes</td><td>Implemented · hardware tested</td></tr><tr><td>Multi-link monitoring (neighbor access points as slow channels)</td><td>Implemented · hardware tested</td></tr><tr><td>Spectral band statistics on the live signal</td><td>Implemented · descriptive only</td></tr><tr><td>Event journal with before/after context</td><td>Implemented · local SQLite</td></tr><tr><td>Record, CSV export, timed replay, speed and seeking</td><td>Implemented locally</td></tr><tr><td>CSI waterfall heatmap and labelled trial analysis</td><td>Implemented · needs ESP32 hardware test</td></tr><tr><td>RuView WebSocket connection</td><td>Implemented · protocol tested</td></tr><tr><td>Person counts, 17-keypoint pose, vital signs, fall estimates</td><td>Requires compatible CSI engine; unvalidated</td></tr><tr><td>Object identity, measured range, through-wall localization</td><td>Not implemented</td></tr><tr><td>Training, firmware flashing, multi-node provisioning, edge modules</td><td>Use upstream tools; not integrated</td></tr></tbody></table>`;
+    }
+    this.lastUpdate = 0;
+  }
+  async loadSessions() {
+    const token = ++this.requestId;
+    try {
+      const sessions = await api('/sessions');
+      if (token !== this.requestId || this.page !== 'sessions') return;
+      const list = el('session-list'); list.replaceChildren();
+      if (!sessions.length) { list.textContent = 'No recordings yet. Start one from Operations while viewing the live sensor.'; return; }
+      for (const session of sessions) {
+        const row = document.createElement('div'); row.className = 'session-row';
+        const title = document.createElement('span'); title.textContent = `${session.name || 'Untitled'} · ${session.start_time} · ${session.end_time ? 'finished' : 'open'}`;
+        const csv = document.createElement('a'); csv.href = `/session/${Number(session.id)}/export`; csv.textContent = 'CSV'; csv.download = '';
+        const play = document.createElement('button'); play.textContent = 'Replay'; play.onclick = () => this.loadReplay(Number(session.id), play);
+        row.append(title, csv, play); list.append(row);
+      }
+    } catch (error) { if (token === this.requestId) this.notice(error.message); }
+  }
+  async startCsiTrial() {
+    el('trial-start').disabled = true;
+    try {
+      const result = await api('/api/csi/trials/start', 'POST', {
+        name: el('trial-name').value, label: el('trial-label').value, seconds: Number(el('trial-seconds').value),
+      });
+      show('trial-status', `${result.message} Trial #${result.trial_id}. Max 10 frames/s; up to 512 amplitude bins per frame.`);
+      await this.loadCsiTrials();
+    } catch (error) { show('trial-status', error.message); }
+    finally { el('trial-start').disabled = false; }
+  }
+  async labelCsiTrial() {
+    try {
+      const result = await api('/api/csi/trials/label', 'POST', { label: el('trial-label').value });
+      show('trial-status', `${result.message} New samples: ${result.label}.`);
+    } catch (error) { show('trial-status', error.message); }
+  }
+  async stopCsiTrial() {
+    el('trial-stop').disabled = true;
+    try {
+      const result = await api('/api/csi/trials/stop', 'POST'); show('trial-status', result.message);
+      await this.loadCsiTrials();
+    } catch (error) { show('trial-status', error.message); }
+    finally { el('trial-stop').disabled = false; }
+  }
+  async loadCsiTrials() {
+    const token = ++this.requestId;
+    try {
+      const result = await api('/api/csi/trials');
+      if (token !== this.requestId || this.page !== 'dataset') return;
+      const local = this.obs._currentData?.meta?.local;
+      const connected = this.obs.settings.dataSource === 'native' && local?.source === 'esp32_csi' && local.system_status === 'ok';
+      const active = result.active?.active;
+      el('trial-start').disabled = !connected || Boolean(result.active);
+      el('trial-label-mark').disabled = !active;
+      el('trial-stop').disabled = !active;
+      if (!active && !connected) show('trial-status', 'CSI collection is unavailable. Start a CSI serial source and wait for live frames before collecting.');
+      else if (active) show('trial-status', `Trial #${result.active.id} · ${result.active.label} · ${result.active.samples} saved frames · ${result.active.dropped} dropped. Select a room label and apply it before the next condition.`);
+      else show('trial-status', result.error || 'CSI is connected. Starting a trial will store labeled amplitude data locally.');
+      const list = el('csi-trial-list'); list.replaceChildren();
+      for (const trial of result.trials) {
+        const row = document.createElement('div'); row.className = 'session-row';
+        const summary = document.createElement('span'); summary.textContent = `#${trial.id} · ${trial.name} · ${trial.initial_label} · ${trial.sample_count} frames · ${trial.start_time}${trial.end_time ? ` · ${trial.stop_reason || 'stopped'}` : ' · finalizing'}`;
+        row.append(summary);
+        if (trial.end_time && trial.sample_count > 0) {
+          const download = document.createElement('a'); download.href = `/api/csi/trials/${Number(trial.id)}/export`; download.textContent = 'Download JSONL'; download.download = '';
+          row.append(download);
+          const analyze = document.createElement('button'); analyze.textContent = 'Analyze';
+          analyze.onclick = () => this.analyseCsiTrial(Number(trial.id), analyze);
+          row.append(analyze);
+        }
+        if (trial.end_time) {
+          const remove = document.createElement('button'); remove.textContent = 'Delete';
+          remove.onclick = async () => {
+            if (!window.confirm(`Delete trial #${trial.id} and its local CSI data?`)) return;
+            try { const response = await api(`/api/csi/trials/${Number(trial.id)}`, 'DELETE'); show('trial-status', response.message); await this.loadCsiTrials(); }
+            catch (error) { show('trial-status', error.message); }
+          };
+          row.append(remove);
+        }
+        list.append(row);
+      }
+      const capacity = document.createElement('p'); capacity.className = 'workspace-muted';
+      capacity.textContent = `${result.total_samples} / 15,000 CSI frames stored locally.`;
+      list.prepend(capacity);
+      if (!result.trials.length) list.textContent = 'No CSI trials saved. Connect a CSI device to enable collection.';
+    } catch (error) { if (token === this.requestId) show('trial-status', error.message); }
+  }
+  async analyseCsiTrial(id, button) {
+    button.disabled = true;
+    const area = el('trial-analysis');
+    try {
+      const result = await api(`/api/csi/trials/${id}/analysis`);
+      const rows = result.labels.map(label => `<tr><td>${label.label}</td><td>${label.frames}</td><td>${label.mean_activity.toFixed(4)}</td></tr>`).join('');
+      let separation = '';
+      if (result.separation) {
+        const top = result.separation.top_subcarriers
+          .map(item => `<li>subcarrier ${item.subcarrier} · F = ${item.f_statistic.toFixed(2)}</li>`).join('');
+        separation = `<h4>Label separation (per-subcarrier F-statistic)</h4><p>max F = ${result.separation.max_f.toFixed(2)} · median F = ${result.separation.median_f.toFixed(2)}</p><ul>${top}</ul>`;
+      } else {
+        separation = '<p class="workspace-muted">Collect at least two different labels to compare them.</p>';
+      }
+      area.innerHTML = `<h4>Trial #${id} analysis · ${result.frames_analyzed} frames · ${result.subcarriers} subcarriers</h4>
+        <table class="feature-table"><thead><tr><th>Label</th><th>Frames</th><th>Mean frame-to-frame activity</th></tr></thead><tbody>${rows}</tbody></table>
+        ${separation}<p class="workspace-muted">${result.note}</p>`;
+    } catch (error) { show('trial-status', error.message); }
+    finally { button.disabled = false; }
+  }
+  async loadReplay(id, button) {
+    const token = ++this.requestId; button.disabled = true;
+    try {
+      const recording = await api(`/session/${id}/frames`);
+      if (token !== this.requestId) return;
+      const frames = recording.frames.map(normalizeFrame);
+      if (!frames.length) throw new Error('No replayable snapshots. Older recordings may only support CSV export.');
+      const start = Date.parse(frames[0].timestamp);
+      const times = frames.map((frame, index) => {
+        const delta = (Date.parse(frame.timestamp) - start) / 1000;
+        return Number.isFinite(delta) ? Math.max(0, delta) : index / 5;
+      });
+      this.obs.selectSource('replay');
+      this.replay = { frames, times, time: 0, speed: Number(el('playback-speed').value), duration: times.at(-1), truncated: recording.truncated };
+      el('playback-seek').max = this.replay.duration || 1; el('playback-seek').step = 0.1;
+      this.close();
+    } catch (error) { this.notice(error.message); }
+    finally { button.disabled = false; }
+  }
+  replayFrame(dt) {
+    if (!this.replay) return emptyFrame();
+    const replay = this.replay;
+    if (!this.obs._paused) replay.time = Math.min(replay.duration, replay.time + dt * replay.speed);
+    let index = replay.times.findIndex(time => time > replay.time);
+    index = index === -1 ? replay.frames.length - 1 : Math.max(0, index - 1);
+    const frame = replay.frames[index];
+    return { ...frame, meta: { ...frame.meta, label: 'RECORDED REPLAY', isReplay: true,
+      note: `Historical ${frame.source} data. ${replay.truncated ? 'First 10,000 snapshots loaded; full recording available as CSV.' : 'No live detection in replay mode.'}` } };
+  }
+  update(data) {
+    if (performance.now() - this.lastUpdate < 200) return;
+    this.lastUpdate = performance.now();
+    const mode = this.obs.settings.dataSource, meta = data?.meta || {};
+    const badge = el('data-source-badge');
+    const label = meta.label || (mode === 'demo' ? 'DEMO · SYNTHETIC' : 'WAITING FOR DATA');
+    show('data-source-label', this.obs._paused ? `PAUSED VIEW · ${label}` : label);
+    badge.dataset.mode = mode === 'demo' || meta.synthetic ? 'demo' : meta.fresh ? 'live' : 'offline';
+    const dot = badge.querySelector('.dot');
+    if (dot) dot.className = `dot dot--${meta.fresh && !meta.synthetic ? 'live' : 'demo'}`;
+    show('motion-label', meta.local ? 'Change score' : 'Motion');
+    show('source-note', `${meta.note || (mode === 'demo' ? 'Generated scenario. People, poses, and vital signs are simulated.' : this.obs._connectionState || 'Waiting for a sensor…')} Room layout is illustrative.`);
+    for (const [id, target] of [['mode-native', 'native'], ['mode-demo', 'demo'], ['mode-server', 'ws']]) el(id).classList.toggle('active', mode === target);
+    el('playback-bar').hidden = mode !== 'replay';
+    if (mode === 'replay' && this.replay) {
+      el('playback-seek').value = this.replay.time;
+      show('playback-time', `${this.replay.time.toFixed(1)} / ${this.replay.duration.toFixed(1)} s`);
+      show('playback-pause', this.obs._paused ? 'Resume' : 'Pause');
+    }
+    if (!this.isOpen) return;
+    if (this.page === 'operations') {
+      const local = mode === 'native' ? data.meta?.local : null;
+      show('op-state', local?.state || 'Select live sensor'); show('op-rate', format(local?.read_rate_hz, ' Hz'));
+      show('op-age', format(local?.sample_age_ms, ' ms')); show('op-progress', format(local?.learning_progress * 100, '%'));
+      el('op-calibrate').disabled = !local || !meta.fresh;
+      el('op-record').disabled = !local || !meta.fresh || local.recording;
+      el('op-stop').disabled = !local?.recording;
+      show('op-recording', local?.recording ? `Recording session #${local.session_id}` : 'Not recording this sensor.');
+      show('op-error', local?.recording_error || '');
+    }
+    if (this.page === 'devices') {
+      const list = el('device-list'); list.replaceChildren();
+      for (const node of data.nodes || []) {
+        const row = document.createElement('div'); row.className = 'device-row';
+        row.textContent = `${node.name || `Node ${node.node_id}`} · ${format(node.rssi_dbm, ' dBm')} · ${node.subcarrier_count ? `${node.subcarrier_count} subcarriers` : node.channel ? `channel ${node.channel}` : 'channel unavailable'}`;
+        list.append(row);
+      }
+      if (!list.childElementCount) list.textContent = 'No sensor nodes reported by this stream.';
+    }
+    if (this.page === 'dataset' && mode === 'native') {
+      const trial = meta.local?.csi_trial;
+      if (trial?.active) {
+        this.lastObservedTrial = trial.id;
+        el('trial-label').value = trial.label;
+        show('trial-status', `Trial #${trial.id} · ${trial.label} · ${trial.samples} saved frames · ${trial.dropped} dropped.`);
+        el('trial-stop').disabled = false;
+        el('trial-label-mark').disabled = false;
+      } else if (trial) {
+        el('trial-stop').disabled = true; el('trial-label-mark').disabled = true;
+      }
+      if (!trial && this.lastObservedTrial && !this.refreshingCsiTrials) {
+        this.lastObservedTrial = null; this.refreshingCsiTrials = true;
+        this.loadCsiTrials().finally(() => { this.refreshingCsiTrials = false; });
+      }
+      show('trial-live-device', meta.local?.source === 'esp32_csi'
+        ? `${meta.fresh ? 'CSI stream connected' : 'CSI stream waiting'} · ${meta.local.subcarrier_count || '—'} input subcarriers`
+        : 'No live CSI frames. Windows Wi-Fi RSSI does not include subcarrier data.');
+      if (!trial?.active) el('trial-start').disabled = !(meta.local?.source === 'esp32_csi' && meta.fresh);
+    }
+  }
+}
