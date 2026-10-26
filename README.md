@@ -31,12 +31,10 @@ It was engineered as a truthful, scientific alternative to fake "WiFi radar" dem
 
 ---
 
-## 📸 See It Live
+## 🖥️ Live Radar Monitor Interface
 
-| Live Monitor — Real Hardware | CSI Subcarrier Waterfall | 3D Observatory Room |
-| :--- | :--- | :--- |
-| ![WiFi motion detection dashboard showing live RSSI, neighbor links, spectral analysis, and event journal](assets/readme-live-monitor.png) | ![ESP32 CSI channel state information subcarrier amplitude waterfall heatmap](assets/readme-csi-waterfall.png) | ![WiFi sensing 3D observatory room visualization with simulated multi-person tracking](assets/readme-observatory-demo.png) |
-| Actual laptop Wi-Fi adapter at ~10 readings/second | Subcarrier-level 52-bin CSI heatmap (real with ESP32) | Interactive room scene with orbit camera & scenarios |
+![WiFi Sensing Live Radar Monitor](assets/current-live-monitor.png)
+*Actual live screenshot from the active V2 system: Real-time RSSI signal changes, path-loss distance, Fresnel perturbation, and spectral link analysis.*
 
 ---
 
