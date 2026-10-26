@@ -39,7 +39,7 @@ export function normalizeFrame(raw) {
     return { ...emptyFrame(raw.state), source: raw.source, timestamp: raw.timestamp, tick: raw.sequence,
       signal_field: { grid_size: [20, 1, 20], values: fieldValues },
       classification: {
-        presence: raw.motion_detected,
+        presence: raw.motion_detected ?? null,
         confidence: motion,
         motion_level: raw.motion_detected ? 'active' : 'calm'
       },

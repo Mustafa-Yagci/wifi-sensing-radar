@@ -7,7 +7,7 @@ import { HudController, DEFAULTS } from '../observatory/js/hud-controller.js';
 import { normalizeFrame } from '../observatory/wiwave-data.js';
 
 test('actual Observatory markup supports source switching, settings, controls and timed replay', async t => {
-  const dom = new JSDOM(fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8'), { url: 'http://localhost:8000' });
+  const dom = new JSDOM(fs.readFileSync(new URL('../observatory.html', import.meta.url), 'utf8'), { url: 'http://localhost:8000' });
   const original = { document: globalThis.document, localStorage: globalThis.localStorage, fetch: globalThis.fetch };
   globalThis.document = dom.window.document;
   globalThis.localStorage = dom.window.localStorage;

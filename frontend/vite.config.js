@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   build: {
-    rollupOptions: { input: { observatory: 'index.html', monitor: 'monitor.html' } },
+    rollupOptions: { input: { main: 'index.html', monitor: 'monitor.html' } },
     chunkSizeWarningLimit: 800,
   },
   server: {
