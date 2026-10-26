@@ -42,12 +42,18 @@ It was engineered as a truthful, scientific alternative to fake "WiFi radar" dem
 
 ## ✨ Key Features & Architectural Highlights
 
+- ⚡ **V2 Production Stability Engine (`sensing/v2/`):**
+  - **Hampel Outlier Identifier ($W=5, 3\times\text{MAD}$):** Cleans transient packet spikes caused by OS scans or channel contention.
+  - **Dual-Rate Adaptive Baseline:** Updates dynamic baseline ($\alpha=0.005$) only during ambient quiet, freezing adaptation during active motion to prevent baseline corruption.
+  - **Frobenius $L_2$ Norm CSI Normalization:** Cancels hardware AGC gain hops across 52 subcarriers.
+  - **TrafficPacer Active Keep-Alive:** Background 20 Hz micro-beacon thread preventing Windows NIC power-save polling, locking driver read rates at steady ~9.2 Hz.
+  - *(See full mathematical proofs and literature analysis in [DEVELOPMENT_REPORT.md](DEVELOPMENT_REPORT.md))*
+- 🖥️ **Modern Live Radar Monitor:** React 19 single-page dashboard with real-time SVG sparklines, RF path-loss distance estimation, Fresnel perturbation levels, and spectral entropy distribution.
 - 🔬 **Multi-Link RSSI Fusion:** Unlike single-link tools, tracks your primary access point **plus visible neighbor APs** as independent environmental channels, using robust cross-link fusion that suppresses single-channel noise.
 - 📊 **Rolling Welch Spectral Engine:** A 30-second rolling Welch Power Spectral Density (PSD) analysis on a uniform 10 Hz grid separating **Slow Band ($0.1 \dots 0.5\text{ Hz}$ respiration)** from **Fast Band ($1.0 \dots 4.0\text{ Hz}$ movement & walking)**.
 - 🗒️ **Event Journal with Pre/Post Buffering:** Sustained environmental disturbances trigger local recordings with up to 30 seconds of pre-trigger and post-trigger ring-buffered context stored in SQLite.
 - 🌊 **52-Subcarrier CSI Waterfall:** Connect an ESP32 flashed with Espressif CSI firmware to inspect live subcarrier magnitude vectors in real-time.
 - 🧪 **Labelled Room-Trial Laboratory:** Collect trials tagged with room conditions (`empty_room`, `person_moving`, `fan_interference`, etc.) with built-in per-subcarrier separation analytics.
-- 🎛️ **3D Observatory Engine:** Three.js (r160) interactive viewport with bloom post-processing, 12 synthetic test scenarios, and 6 visual style presets.
 - 🔒 **100% Local-First & Privacy-Preserving:** Local SQLite storage, zero cloud telemetry, no accounts. Raw RF evidence without recording personal identity or imagery.
 
 ---
